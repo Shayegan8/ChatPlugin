@@ -68,6 +68,7 @@ public final class ChatPlugin extends JavaPlugin {
         createConfig();
         getLogger().info(ColorUtils.C("Registering commands..."));
         this.getCommand("chatp").setExecutor(new BaseCommand());
+        this.getCommand("chatp").setTabCompleter(new BaseCommand());
         getLogger().info(ColorUtils.C("Establishing connection to database"));
 
         getLogger().info(ColorUtils.C("ChatPlugin enabled"));
