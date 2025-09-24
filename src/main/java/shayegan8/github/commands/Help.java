@@ -39,6 +39,9 @@ public class Help extends CommandManager {
             ChatPlugin.configuration.getStringList("player.help").forEach((str) -> {
                 sender.sendMessage(ColorUtils.C(str));
             });
-        });
+        }).exceptionally((exp) -> {
+            sender.sendMessage("An error occurred");
+            throw new IllegalStateException(exp.getMessage());
+        });;
     }
 }

@@ -29,7 +29,7 @@ public class MDatabase {
     public static CompletableFuture<String> getPlayerGroup(String playerName) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerName = '?'");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerName = ?");
                 String groupName = null;
                 pState.setString(1, playerName);
                 var query = pState.executeQuery();
@@ -42,10 +42,49 @@ public class MDatabase {
         });
     }
 
+    public static void setPlayerGroup(String playerName, String groupName) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET groupName=? WHERE playerName=?");
+                pState.setString(1, groupName);
+                pState.setString(2, playerName);
+                pState.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static void setPlayerTag(String playerName, String playerTag) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET playerTag=? WHERE playerName=?");
+                pState.setString(1, playerTag);
+                pState.setString(2, playerName);
+                pState.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static void setPlayerInGroup(String playerName, boolean inGroup) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET inGroup=? WHERE playerName=?");
+                pState.setBoolean(1, inGroup);
+                pState.setString(2, playerName);
+                pState.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     public static CompletableFuture<String> getPlayerTag(String playerName) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerName = ?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerName=?");
                 String playerTag = null;
                 pState.setString(1, playerName);
                 var query = pState.executeQuery();
@@ -61,7 +100,7 @@ public class MDatabase {
     public static CompletableFuture<Boolean> isPlayerInGroup(String playerName) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerName = '?'");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerName=?");
                 Boolean inGroup = null;
                 pState.setString(1, playerName);
                 var query = pState.executeQuery();
@@ -73,5 +112,4 @@ public class MDatabase {
             }
         });
     }
-
 }

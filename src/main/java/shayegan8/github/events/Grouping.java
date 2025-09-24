@@ -15,7 +15,6 @@ public class Grouping implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-
     }
 
     private void checkGroup(String name) {

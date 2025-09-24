@@ -45,21 +45,29 @@ public class Invite extends CommandManager {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (sender instanceof Player && sender.hasPermission(getPermission())) {
-            if (args.length == 2) {
-                CompletableFuture<String> senderInfo = MDatabase.getPlayerGroup(sender.getName());
-                senderInfo.thenAcceptAsync((obj) -> {
-                    TextComponent msg = new TextComponent(ColorUtils.C(sender.getName() + " Invited you to " + obj + " \n&eClick this messaage to join"));
-                    msg.setColor(ChatColor.RED);
-                    msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp add " + args[1] + " " + obj)); // chatp add playerName group
-                    msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click this to join to the group").create()));
-                    sender.spigot().sendMessage(msg);
-                });
-            } else {
-                sender.sendMessage(getUsage());
-            }
-        } else {
+        if (!(sender instanceof Player) && !(sender.hasPermission(getPermission()))) {
             sender.sendMessage(getPermissionMSG());
+            return;
         }
+        if (args.length != 2) {
+            sender.sendMessage(getUsage());
+            return;
+        }
+        MDatabase.getPlayerTag(sender.getName()).thenCompose((tag) -> {
+            if(!tag.equalsIgnoreCase("admin") && !tag.equalsIgnoreCase("staff")) {
+                sender.sendMessage("You need to be admin or staff to invite");
+                return CompletableFuture.completedFuture(null);
+            }
+            return MDatabase.getPlayerGroup(sender.getName());
+        }).thenAccept((group) -> {
+            TextComponent msg = new TextComponent(ColorUtils.C(sender.getName() + " Invited you to " + group + " \n&eClick this messaage to join"));
+            msg.setColor(ChatColor.RED);
+            msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + args[1] + " " + group)); // chatp add playerName group
+            msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click this to join to the group").create()));
+            sender.spigot().sendMessage(msg);
+        }).exceptionally((exp) -> {
+            sender.sendMessage("An error occurred");
+            throw new IllegalStateException(exp.getMessage());
+        });
     }
 }
