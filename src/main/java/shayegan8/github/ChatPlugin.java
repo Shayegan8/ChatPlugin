@@ -24,14 +24,27 @@ import java.util.Map;
 @Author("Shayegan8")
 @Permission(name = "chatp.base.help", desc = "chatplugin help command", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.base.reload", desc = "chatplugin reload command", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.remove", desc = "Chatplugin remove permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.quit", desc = "Chatplugin quit permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.mute", desc = "Chatplugin mute permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.join", desc = "Chatplugin join permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.invite", desc = "Chatplugin invite permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.group", desc = "Chatplugin group permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.friends", desc = "Chatplugin friends permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.*", desc = "Chatplugin wildcard permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.base", desc = "Chatplugin base permission", defaultValue = PermissionDefault.OP)
 @Commands(
     {
         @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp"),
         @Command(name = "chatp help", desc = "chatplugin help command", permission = "chatp.base.help", usage = "/chatp help"),
-        @Command(name = "chatp reload", desc = "chatplugin help command", permission = "chatp.base.reload", usage = "/chatp reload"),
-        @Command(name = "chatp invite", desc = "chatplugin help command", permission = "chatp.base.reload", usage = "/chatp invite playername")
+        @Command(name = "chatp reload", desc = "chatplugin reload command", permission = "chatp.base.reload", usage = "/chatp reload"),
+        @Command(name = "chatp remove", desc = "chatplugin help command", permission = "chatp.base.remove", usage = "/chatp remove playername"),
+        @Command(name = "chatp invite", desc = "chatplugin invite command", permission = "chatp.base.invite", usage = "/chatp invite playername"),
+        @Command(name = "chatp quit", desc = "chatplugin quit command", permission = "chatp.base.quit", usage = "/chatp quit"),
+        @Command(name = "chatp mute", desc = "chatplugin mute command", permission = "chatp.base.mute", usage = "/chatp mute playername"),
+        @Command(name = "chatp join", desc = "chatplugin join command", permission = "chatp.base.join", usage = "/chatp join group"),
+        @Command(name = "chatp group", desc = "chatplugin group command", permission = "chatp.base.group", usage = "/chatp group"),
+        @Command(name = "chatp friends", desc = "chatplugin friends command", permission = "chatp.base.friends", usage = "/chatp friends")
     }
 )
 
