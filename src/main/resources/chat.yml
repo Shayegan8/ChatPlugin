@@ -1,0 +1,4 @@
+player.help:
+  - "&cPlayer help"
+  - "&r"
+  - "&c- /chatp reload"
