@@ -11,10 +11,7 @@ import org.bukkit.plugin.java.annotation.permission.Permission;
 import org.bukkit.plugin.java.annotation.plugin.Description;
 import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
-import shayegan8.github.commands.BaseCommand;
-import shayegan8.github.commands.CommandManager;
-import shayegan8.github.commands.Help;
-import shayegan8.github.commands.ReloadC;
+import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 
 import java.io.File;
@@ -44,7 +41,11 @@ public final class ChatPlugin extends JavaPlugin {
 
     public static FileConfiguration configuration;
 
-    public static Map<String, CommandManager> commands = Map.of("help", new Help(), "reload", new ReloadC());
+    public static Map<String, CommandManager> commands = Map.of
+            ("help", new Help(),
+                    "reload", new ReloadC(),
+                    "invite", new Invite()
+            );
 
     public static MDatabase mDB;
 

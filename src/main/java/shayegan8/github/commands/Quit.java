@@ -1,4 +1,4 @@
 package shayegan8.github.commands;
 
-public class Exit {
+public class Quit {
 }

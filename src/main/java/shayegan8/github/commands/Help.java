@@ -36,7 +36,7 @@ public class Help extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         CompletableFuture.runAsync(() -> {
-            ChatPlugin.getConfiguration().getStringList("player.help").forEach((str) -> {
+            ChatPlugin.configuration.getStringList("player.help").forEach((str) -> {
                 sender.sendMessage(ColorUtils.C(str));
             });
         });

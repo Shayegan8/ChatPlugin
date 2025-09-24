@@ -6,11 +6,11 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 
-import net.md_5.bungee.api.chat.hover.content.Content;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
+import shayegan8.github.database.MDatabase;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -20,7 +20,7 @@ public class Invite extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp invite `playername`";
+        return "/chatp invite `playerName`";
     }
 
     @Override
@@ -47,7 +47,7 @@ public class Invite extends CommandManager {
     public void execute(CommandSender sender, String[] args) {
         if (sender instanceof Player && sender.hasPermission(getPermission())) {
             if (args.length == 2) {
-                CompletableFuture<String> senderInfo = getSenderGroup(sender);
+                CompletableFuture<String> senderInfo = MDatabase.getPlayerGroup(sender.getName());
                 senderInfo.thenAcceptAsync((obj) -> {
                     TextComponent msg = new TextComponent(ColorUtils.C(sender.getName() + " Invited you to " + obj + " \n&eClick this messaage to join"));
                     msg.setColor(ChatColor.RED);
@@ -61,21 +61,5 @@ public class Invite extends CommandManager {
         } else {
             sender.sendMessage(getPermissionMSG());
         }
-    }
-
-    private CompletableFuture<String> getSenderGroup(CommandSender sender) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupname FROM players WHERE playername = '?'");
-                String groupName = null;
-                pState.setString(1, sender.getName());
-                var query = pState.executeQuery();
-                while (query.next())
-                    groupName = query.getString("groupname");
-                return groupName;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
     }
 }
