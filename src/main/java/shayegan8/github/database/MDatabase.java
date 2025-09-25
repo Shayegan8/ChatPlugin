@@ -51,23 +51,27 @@ public class MDatabase {
     }
 
     public static void createGroup(String groupName) {
-        try {
-            PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("INSERT OR IGNORE INTO groups (groupname) VALUES (?)");
-            pStatement.setString(1, groupName);
-            pStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("INSERT OR IGNORE INTO groups (groupname) VALUES (?)");
+                pStatement.setString(1, groupName);
+                pStatement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public static void deleteGroup(String groupName) {
-        try {
-            PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("ALTER TABLE groups DROP COLUMN ?");
-            pStatement.setString(1, groupName);
-            pStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("ALTER TABLE groups DROP COLUMN ?");
+                pStatement.setString(1, groupName);
+                pStatement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public static CompletableFuture<String> getPlayerGroup(UUID playerUUID) {

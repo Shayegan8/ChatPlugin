@@ -13,6 +13,7 @@ import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
+import shayegan8.github.events.Grouping;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,18 +52,20 @@ import java.util.Map;
 
 public final class ChatPlugin extends JavaPlugin {
 
-    public static File file_;
-
+    private static File file_;
+    private static File file2_;
     public static FileConfiguration configuration;
-
     public static Map<String, CommandManager> commands = Map.of
             ("help", new Help(),
                     "reload", new ReloadC(),
                     "invite", new Invite()
             );
     public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
-
     public static MDatabase mDB;
+    private static final String GREEN = "\u001b[32m";
+    private static final String RED = "\u001b[31m";
+    private static final String REFRESH = "\u001b[0m";
+
 
     @Override
     public void onEnable() {
@@ -71,9 +74,11 @@ public final class ChatPlugin extends JavaPlugin {
         getLogger().info(ColorUtils.C("Registering commands..."));
         this.getCommand("chatp").setExecutor(new BaseCommand());
         this.getCommand("chatp").setTabCompleter(new BaseCommand());
-        getLogger().info(ColorUtils.C("Establishing connection to database"));
+        getLogger().info(ColorUtils.C("Establishing connection to database..."));
         mDB = new MDatabase();
-        getLogger().info(ColorUtils.C("\u001b[32mChatPlugin enabled\u001b[0m"));
+        getLogger().info(ColorUtils.C("Registering events..."));
+        getServer().getPluginManager().registerEvents(new Grouping(), this);
+        getLogger().info(ColorUtils.C(GREEN + "ChatPlugin enabled" + REFRESH));
     }
 
     @Override
@@ -84,13 +89,16 @@ public final class ChatPlugin extends JavaPlugin {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        getLogger().info(ColorUtils.C("\u001b[31mChatPlugin disabled\u001b[0m"));
+        getLogger().info(ColorUtils.C(RED + "ChatPlugin disabled" + REFRESH));
     }
 
     private void createConfig() {
         file_ = Paths.get(getDataFolder() + "/chat.yml").toFile();
+        file2_ = Paths.get(getDataFolder() + "/menu.yml").toFile();
         if(!file_.exists())
             saveResource("chat.yml", false);
+        if(!file2_.exists())
+            saveResource("menu.yml", false);
         configuration = YamlConfiguration.loadConfiguration(file_);
     }
 
