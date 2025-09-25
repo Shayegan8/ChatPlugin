@@ -17,6 +17,7 @@ import shayegan8.github.database.MDatabase;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.Map;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
@@ -59,6 +60,7 @@ public final class ChatPlugin extends JavaPlugin {
                     "reload", new ReloadC(),
                     "invite", new Invite()
             );
+    public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
 
     public static MDatabase mDB;
 
@@ -70,13 +72,19 @@ public final class ChatPlugin extends JavaPlugin {
         this.getCommand("chatp").setExecutor(new BaseCommand());
         this.getCommand("chatp").setTabCompleter(new BaseCommand());
         getLogger().info(ColorUtils.C("Establishing connection to database"));
-
-        getLogger().info(ColorUtils.C("ChatPlugin enabled"));
+        mDB = new MDatabase();
+        getLogger().info(ColorUtils.C("\u001b[32mChatPlugin enabled\u001b[0m"));
     }
 
     @Override
     public void onDisable() {
-        getLogger().info(ColorUtils.C("&cChatPlugin disabled"));
+        try {
+            if(mDB.getConnection() != null)
+                mDB.getConnection().close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        getLogger().info(ColorUtils.C("\u001b[31mChatPlugin disabled\u001b[0m"));
     }
 
     private void createConfig() {

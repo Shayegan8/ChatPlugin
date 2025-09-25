@@ -3,10 +3,12 @@ package shayegan8.github.database;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class MDatabase {
@@ -16,22 +18,64 @@ public class MDatabase {
 
     public MDatabase() {
         try{
-            connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/chatdb");
-            PreparedStatement pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXIST groups (groupName TEXT);");
+            connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb");
+            PreparedStatement pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT);");
             pStatement.executeUpdate();
-            pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXIST players (groupName TEXT references groups(groupName), playerName TEXT, playerTag TEXT, inGroup BOOLEAN);");
+            pStatement = connection
+                    .prepareStatement
+                            ("CREATE TABLE IF NOT EXISTS players " +
+                                    "(groupName TEXT references groups(groupName) ON DELETE SET NULL," +
+                                    " playerUUID BLOB, " +
+                                    "playerTag TEXT, " +
+                                    "inGroup BOOLEAN, " +
+                                    "muted BOOLEAN, " +
+                                    "invited BOOLEAN);");
             pStatement.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException(e.getMessage());
         }
     }
 
-    public static CompletableFuture<String> getPlayerGroup(String playerName) {
+    private static byte[] convertToBlob(UUID playerUUID) {
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
+        buffer.putLong(playerUUID.getMostSignificantBits());
+        buffer.putLong(playerUUID.getLeastSignificantBits());
+        return buffer.array();
+    }
+
+    private static UUID convertToUUID(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        long mostSignificantBits = buffer.getLong();
+        long leastSignificantBits = buffer.getLong();
+        return new UUID(mostSignificantBits, leastSignificantBits);
+    }
+
+    public static void createGroup(String groupName) {
+        try {
+            PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("INSERT OR IGNORE INTO groups (groupname) VALUES (?)");
+            pStatement.setString(1, groupName);
+            pStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteGroup(String groupName) {
+        try {
+            PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("ALTER TABLE groups DROP COLUMN ?");
+            pStatement.setString(1, groupName);
+            pStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static CompletableFuture<String> getPlayerGroup(UUID playerUUID) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerName = ?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerUUID = ?");
                 String groupName = null;
-                pState.setString(1, playerName);
+                pState.setBytes(1, convertToBlob(playerUUID));
                 var query = pState.executeQuery();
                 while (query.next())
                     groupName = query.getString("groupName");
@@ -42,12 +86,12 @@ public class MDatabase {
         });
     }
 
-    public static void setPlayerGroup(String playerName, String groupName) {
+    public static void setPlayerGroup(UUID playerUUID, String groupName) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET groupName=? WHERE playerName=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET groupName=? WHERE playerUUID=?");
                 pState.setString(1, groupName);
-                pState.setString(2, playerName);
+                pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -55,12 +99,12 @@ public class MDatabase {
         });
     }
 
-    public static void setPlayerTag(String playerName, String playerTag) {
+    public static void setPlayerTag(UUID playerUUID, String playerTag) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET playerTag=? WHERE playerName=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET playerTag=? WHERE playerUUID=?");
                 pState.setString(1, playerTag);
-                pState.setString(2, playerName);
+                pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -68,12 +112,12 @@ public class MDatabase {
         });
     }
 
-    public static void setPlayerInGroup(String playerName, boolean inGroup) {
+    public static void setPlayerInGroup(UUID playerUUID, boolean inGroup) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET inGroup=? WHERE playerName=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET inGroup=? WHERE playerUUID=?");
                 pState.setBoolean(1, inGroup);
-                pState.setString(2, playerName);
+                pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -81,12 +125,38 @@ public class MDatabase {
         });
     }
 
-    public static CompletableFuture<String> getPlayerTag(String playerName) {
+    public static void setPlayerMuted(UUID playerUUID, boolean muted) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET muted=? WHERE playerUUID=?");
+                pState.setBoolean(1, muted);
+                pState.setBytes(2, convertToBlob(playerUUID));
+                pState.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static void setPlayerInvited(UUID playerUUID, boolean invited) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET invited=? WHERE playerUUID=?");
+                pState.setBoolean(1, invited);
+                pState.setBytes(2, convertToBlob(playerUUID));
+                pState.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static CompletableFuture<String> getPlayerTag(UUID playerUUID) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerName=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerUUID=?");
                 String playerTag = null;
-                pState.setString(1, playerName);
+                pState.setBytes(2, convertToBlob(playerUUID));
                 var query = pState.executeQuery();
                 while (query.next())
                     playerTag = query.getString("playerTag");
@@ -97,16 +167,61 @@ public class MDatabase {
         });
     }
 
-    public static CompletableFuture<Boolean> isPlayerInGroup(String playerName) {
+    public static CompletableFuture<Boolean> isGroupExist(String groupName) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerName=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM groups WHERE groupName=?");
+                pState.setString(1, groupName);
+                var query = pState.executeQuery();
+                return query.next();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static CompletableFuture<Boolean> isPlayerInGroup(UUID playerUUID) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT inGroup FROM players WHERE playerUUID=?");
                 Boolean inGroup = null;
-                pState.setString(1, playerName);
+                pState.setBytes(2, convertToBlob(playerUUID));
                 var query = pState.executeQuery();
                 while (query.next())
                     inGroup = query.getBoolean("inGroup");
                 return inGroup;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static CompletableFuture<Boolean> isPlayerMuted(UUID playerUUID) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT muted FROM players WHERE playerUUID=?");
+                Boolean muted = null;
+                pState.setBytes(2, convertToBlob(playerUUID));
+                var query = pState.executeQuery();
+                while (query.next())
+                    muted = query.getBoolean("muted");
+                return muted;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static CompletableFuture<Boolean> isPlayerInvited(UUID playerUUID) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT invited FROM players WHERE playerUUID=?");
+                Boolean invited = null;
+                pState.setBytes(2, convertToBlob(playerUUID));
+                var query = pState.executeQuery();
+                while (query.next())
+                    invited = query.getBoolean("invited");
+                return invited;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }

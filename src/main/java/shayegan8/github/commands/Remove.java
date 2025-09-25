@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.database.MDatabase;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class Remove extends CommandManager {
@@ -40,35 +41,38 @@ public class Remove extends CommandManager {
             sender.sendMessage(getPermissionMSG());
             return;
         }
-        if(args.length != 2) {
+        if(args.length != 1) {
             sender.sendMessage(getUsage());
             return;
         }
-        if (Bukkit.getPlayer(args[1]) == null) {
-            sender.sendMessage("cant find that player");
+        if(Bukkit.getPlayer(args[0]) == null) {
+            sender.sendMessage("Cant find this player");
             return;
         }
-        MDatabase.getPlayerGroup(sender.getName()).thenCombine(MDatabase.getPlayerGroup(args[1]), String::equals).thenCompose((bothInSameGroup) -> {
+        UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
+        UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+
+        MDatabase.getPlayerGroup(senderUUID).thenCombine(MDatabase.getPlayerGroup(argUUID), String::equals).thenCompose((bothInSameGroup) -> {
             if(!bothInSameGroup) {
                 sender.sendMessage("Your group and the requested player's group its not the same");
                 return CompletableFuture.completedFuture(null);
             }
-            return MDatabase.isPlayerInGroup(sender.getName()).thenCombine(MDatabase.isPlayerInGroup(args[1]), (player1, player2) -> player1 && player2);
+            return MDatabase.isPlayerInGroup(senderUUID).thenCombine(MDatabase.isPlayerInGroup(Bukkit.getPlayer(argUUID).getUniqueId()), (player1, player2) -> player1 && player2);
         }).thenCompose((bothAreInGroup) -> {
             if(!bothAreInGroup) {
                 sender.sendMessage("both players are not in group");
                 return CompletableFuture.completedFuture(null);
             }
-            return MDatabase.getPlayerTag(sender.getName());
+            return MDatabase.getPlayerTag(senderUUID);
         }).thenAccept((tag) -> {
             if (tag.equalsIgnoreCase("admin") || tag.equalsIgnoreCase("staff")) {
-                MDatabase.setPlayerGroup(args[1], "none");
+                MDatabase.setPlayerGroup(argUUID, "none");
             } else {
                 sender.sendMessage("You are not admin or staff");
             }
         }).exceptionally((exp) -> {
             sender.sendMessage("An error occurred");
-            throw new IllegalStateException(exp.getMessage());
+            throw new IllegalStateException(exp);
         });;
     }
 
