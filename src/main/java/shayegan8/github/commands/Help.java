@@ -10,27 +10,22 @@ public class Help extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp help";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.usage" ,"&e/chatp help"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return (String) ChatPlugin.configuration.get("chatp.base.help", "&cYou do not have permission!");
-    }
-
-    @Override
-    public String getName() {
-        return "help";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.help";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "chatplugin help command";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.block", "&ejoin to a group"));
     }
 
     @Override
@@ -40,8 +35,8 @@ public class Help extends CommandManager {
                 sender.sendMessage(ColorUtils.C(str));
             });
         }).exceptionally((exp) -> {
-            sender.sendMessage("An error occurred");
-            throw new IllegalStateException(exp.getMessage());
-        });;
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.error", "&cAn error occurred")));
+            throw new IllegalStateException(exp);
+        });
     }
 }

@@ -2,33 +2,30 @@ package shayegan8.github.commands;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 public class Group extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp group";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.group.usage" ,"&e/chatp group help,create,delete"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "You dont have a permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "group";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.group.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.group";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "group command";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.group.block", "&ecreate a group"));
     }
 
     @Override
@@ -47,6 +44,9 @@ public class Group extends CommandManager {
                 break;
             case "delete":
                 MDatabase.deleteGroup(args[1]);
+                break;
+            case "help":
+                sender.sendMessage(getUsage());
                 break;
             default:
                 break;

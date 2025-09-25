@@ -3,36 +3,32 @@ package shayegan8.github.commands;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class Quit extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp quit";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.usage" ,"&e/chatp reload"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "You dont have a permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "quit";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.quit";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "quit from a group";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.block", "&equit from group"));
     }
 
     @Override
@@ -49,9 +45,12 @@ public class Quit extends CommandManager {
 
         MDatabase.isPlayerInGroup(senderUUID).thenAccept((isInGroup) -> {
             if(!isInGroup)
-                sender.sendMessage("You are not in any group");
+                ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.notgroup", "&cYou are not in any group"));
             else
                 MDatabase.setPlayerGroup(senderUUID, "none");
+        }).exceptionally((exp) -> {
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.error", "&cAn error occurred")));
+            throw new IllegalStateException(exp);
         });
     }
 }

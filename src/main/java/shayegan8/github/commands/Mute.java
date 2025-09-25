@@ -4,37 +4,32 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 public class Mute extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp mute";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.usage" ,"&e/chatp mute playername"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "You dont have a permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "mute";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.mute";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "mute from a group";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.block", "&emute players in group"));
     }
 
     @Override
@@ -65,6 +60,9 @@ public class Mute extends CommandManager {
                 sender.sendMessage("You cant mute this player");
             else
                 MDatabase.setPlayerMuted(argUUID, true);
+        }).exceptionally((exp) -> {
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.error", "&cAn error occurred")));
+            throw new IllegalStateException(exp);
         });
 
     }

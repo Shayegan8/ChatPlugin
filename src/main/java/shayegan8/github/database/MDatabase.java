@@ -3,7 +3,12 @@ package shayegan8.github.database;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,13 +16,17 @@ import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+@Getter
 public class MDatabase {
 
-    @Getter
-    private Connection connection;
+    private final Connection connection;
+
+    private final static String path = ChatPlugin.getPlugin(ChatPlugin.class).getDataFolder() + "/database";
 
     public MDatabase() {
         try{
+            if(Files.notExists(Paths.get(path)))
+                Files.createDirectory(Paths.get(path));
             connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb");
             PreparedStatement pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT);");
             pStatement.executeUpdate();
@@ -31,8 +40,8 @@ public class MDatabase {
                                     "muted BOOLEAN, " +
                                     "invited BOOLEAN);");
             pStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new IllegalStateException(e.getMessage());
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -3,6 +3,8 @@ package shayegan8.github.commands;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
@@ -11,27 +13,22 @@ public class Join extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp join groupName";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.usage" ,"&e/chatp join groupname"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "You do not have a permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "join";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.join";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "it joins you to your group";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.block", "&ejoin to a group"));
     }
 
     @Override
@@ -50,6 +47,9 @@ public class Join extends CommandManager {
                 sender.sendMessage("You should be invited first");
             else
                 MDatabase.setPlayerGroup(senderUUID, args[0]);
-        });
+        }).exceptionally((exp) -> {
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.error", "&cAn error occurred")));
+            throw new IllegalStateException(exp);
+        });;
     }
 }

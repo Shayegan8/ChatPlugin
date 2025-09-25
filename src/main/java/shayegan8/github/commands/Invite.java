@@ -9,6 +9,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
@@ -19,27 +20,22 @@ public class Invite extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp invite `playerName`";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.usage" ,"&e/chatp invite playername"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "You do not have a permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "invite";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.invite";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "chatp invite command";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.block", "&einvite player to your group"));
     }
 
     @Override
@@ -77,7 +73,7 @@ public class Invite extends CommandManager {
             msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click this to join to the group").create()));
             sender.spigot().sendMessage(msg);
         }).exceptionally((exp) -> {
-            sender.sendMessage("An error occurred, check if you are in a group atleast");
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.error", "&cAn error occurred, check if you are in a group atleast")));
             throw new IllegalStateException(exp);
         });
     }

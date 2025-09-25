@@ -2,6 +2,7 @@ package shayegan8.github.commands;
 
 import org.bukkit.command.CommandSender;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -9,35 +10,30 @@ public class ReloadC extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp reload";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.usage" ,"&e/chatp reload"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "&cYou do not have permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "reload";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
     public String getPermission() {
-        return "chatp.base.reload";
+        return "chatp.base.block";
     }
 
     @Override
     public String getDescription() {
-        return "chatplugin reload command";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.block", "&ereload config"));
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
         CompletableFuture.runAsync(ChatPlugin::loadChat).exceptionally((exp) -> {
-            sender.sendMessage("An error occurred");
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.error", "&cAn error occurred")));
             throw new IllegalStateException(exp.getMessage());
-        });;
-        sender.sendMessage("Plugin reloaded");
+        });
+        sender.sendMessage("Plugin configuration reloaded");
     }
 }

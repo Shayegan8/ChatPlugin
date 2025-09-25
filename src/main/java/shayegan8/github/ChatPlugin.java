@@ -55,17 +55,14 @@ public final class ChatPlugin extends JavaPlugin {
     private static File file_;
     private static File file2_;
     public static FileConfiguration configuration;
+    public static FileConfiguration configuration_menu;
     public static Map<String, CommandManager> commands = Map.of
-            ("help", new Help(),
-                    "reload", new ReloadC(),
-                    "invite", new Invite()
-            );
+            ("group", new Group(), "help", new Help(), "invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove", new Remove());
     public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
     public static MDatabase mDB;
     private static final String GREEN = "\u001b[32m";
     private static final String RED = "\u001b[31m";
     private static final String REFRESH = "\u001b[0m";
-
 
     @Override
     public void onEnable() {
@@ -100,11 +97,13 @@ public final class ChatPlugin extends JavaPlugin {
         if(!file2_.exists())
             saveResource("menu.yml", false);
         configuration = YamlConfiguration.loadConfiguration(file_);
+        configuration_menu = YamlConfiguration.loadConfiguration(file2_);
     }
 
     public static void saveChat() {
         try {
             configuration.save(file_);
+            configuration_menu.save(file2_);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -113,6 +112,7 @@ public final class ChatPlugin extends JavaPlugin {
     public static void loadChat() {
         try {
             configuration.load(file_);
+            configuration_menu.load(file2_);
         } catch (IOException | InvalidConfigurationException e) {
             throw new RuntimeException(e);
         }

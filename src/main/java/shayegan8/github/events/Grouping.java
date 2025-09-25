@@ -22,6 +22,8 @@ public class Grouping implements Listener {
                     eachPlayer.sendMessage(msg);
             });
         });
+        System.out.println(msg);
+        e.getPlayer().sendMessage(msg);
     }
 
     @EventHandler

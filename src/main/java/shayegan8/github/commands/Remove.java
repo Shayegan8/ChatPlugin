@@ -3,6 +3,8 @@ package shayegan8.github.commands;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
@@ -12,17 +14,12 @@ public class Remove extends CommandManager {
 
     @Override
     public String getUsage() {
-        return "/chatp block playerName";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.usage" ,"&e/chatp block &cplayerName"));
     }
 
     @Override
     public String getPermissionMSG() {
-        return "You dont have a permission!";
-    }
-
-    @Override
-    public String getName() {
-        return "block";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.permissionMSG", "&cYou dont have a permission!"));
     }
 
     @Override
@@ -32,7 +29,7 @@ public class Remove extends CommandManager {
 
     @Override
     public String getDescription() {
-        return "block player from group";
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.block", "&eblock player from group"));
     }
 
     @Override
@@ -46,7 +43,7 @@ public class Remove extends CommandManager {
             return;
         }
         if(Bukkit.getPlayer(args[0]) == null) {
-            sender.sendMessage("Cant find this player");
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notfound", "&cCant find this player :(")));
             return;
         }
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
@@ -54,26 +51,26 @@ public class Remove extends CommandManager {
 
         MDatabase.getPlayerGroup(senderUUID).thenCombine(MDatabase.getPlayerGroup(argUUID), String::equals).thenCompose((bothInSameGroup) -> {
             if(!bothInSameGroup) {
-                sender.sendMessage("Your group and the requested player's group its not the same");
+                sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notfound", "&cYour group and the requested player's group its not the same")));
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.isPlayerInGroup(senderUUID).thenCombine(MDatabase.isPlayerInGroup(Bukkit.getPlayer(argUUID).getUniqueId()), (player1, player2) -> player1 && player2);
         }).thenCompose((bothAreInGroup) -> {
             if(!bothAreInGroup) {
-                sender.sendMessage("both players are not in group");
+                sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.both", "&cboth players are not in group")));
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.getPlayerTag(senderUUID);
         }).thenAccept((tag) -> {
-            if (tag.equalsIgnoreCase("admin") || tag.equalsIgnoreCase("staff")) {
+            if (tag.equals("admin") || tag.equals("staff")) {
                 MDatabase.setPlayerGroup(argUUID, "none");
             } else {
-                sender.sendMessage("You are not admin or staff");
+                sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.cant", "&cYou are not admin or staff")));
             }
         }).exceptionally((exp) -> {
-            sender.sendMessage("An error occurred");
+            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.error", "&cAn error occurred")));
             throw new IllegalStateException(exp);
-        });;
+        });
     }
 
 }

@@ -8,8 +8,6 @@ public abstract class CommandManager {
 
     public abstract String getPermissionMSG();
 
-    public abstract String getName();
-
     public abstract String getPermission();
 
     public abstract String getDescription();
