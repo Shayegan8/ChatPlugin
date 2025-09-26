@@ -30,12 +30,12 @@ public class Invite extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.invite";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.block", "&einvite player to your group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.desc", "&einvite player to your group"));
     }
 
     @Override
@@ -49,11 +49,11 @@ public class Invite extends CommandManager {
             return;
         }
         if(sender.getName().equalsIgnoreCase(args[0])) {
-            Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cantfuckyourself", "&cYou cant invite yourself"));
+            Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cantFuckYourself", "&cYou cant invite yourself"));
             return;
         }
         if(Bukkit.getPlayer(sender.getName()) == null) {
-            Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cantfind", "Cant find this player"));
+            Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cantFind", "&cCant find this player"));
             return;
         }
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
@@ -61,16 +61,16 @@ public class Invite extends CommandManager {
 
         MDatabase.getPlayerTag(senderUUID).thenCompose(tag -> {
             if(!tag.equalsIgnoreCase("admin") && !tag.equalsIgnoreCase("staff")) {
-                Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cant","&cYou need to be admin or staff to invite"));
+                Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cant", "&cYou need to be admin or staff to invite"));
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.getPlayerGroup(senderUUID);
         }).thenAccept(group -> {
             MDatabase.setPlayerInvited(argUUID, true);
-            TextComponent msg = new TextComponent(ColorUtils.C(sender.getName() + " Invited you to " + group + " \n&eClick this messaage to join"));
+            TextComponent msg = new TextComponent(ColorUtils.C("%player_name% Invited you to %group_name%\n&eClick this messaage to join"));
             msg.setColor(ChatColor.RED);
-            msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp invite " + args[0] + " " + group)); // chatp invite playerName
-            msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click this to join to the group").create()));
+            msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + group)); // chatp invite playerName
+            msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.bar", "&eClick this to join to the group"))).create()));
             Thread.ofVirtual().start(() -> sender.spigot().sendMessage(msg));
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.invite.error", "&cAn error occurred, check if you are in a group atleast")));

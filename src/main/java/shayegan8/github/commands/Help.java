@@ -20,12 +20,12 @@ public class Help extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.help";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.block", "&ejoin to a group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.desc", "&ejoin to a group"));
     }
 
     @Override

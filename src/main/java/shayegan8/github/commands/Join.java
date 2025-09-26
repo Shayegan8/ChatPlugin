@@ -8,7 +8,6 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class Join extends CommandManager {
 
@@ -24,12 +23,12 @@ public class Join extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.join";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.block", "&ejoin to a group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.desc", "&ejoin to a group"));
     }
 
     @Override
@@ -45,7 +44,7 @@ public class Join extends CommandManager {
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
         MDatabase.isPlayerInvited(senderUUID).thenAccept(invited -> {
             if(!invited)
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.invitedfirst", "You should be invited first"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.invitedFirst", "&eYou should be invited first"))));
             else
                 MDatabase.setPlayerGroup(senderUUID, args[0]);
         }).exceptionallyAsync(exp -> {

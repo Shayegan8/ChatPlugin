@@ -24,12 +24,12 @@ public class Mute extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.mute";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.block", "&emute players in group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.desc", "&emute players in group"));
     }
 
     @Override
@@ -43,7 +43,7 @@ public class Mute extends CommandManager {
             return;
         }
         if(Bukkit.getPlayer(args[0]) == null) {
-            Thread.ofVirtual().start(() -> sender.sendMessage("chatp.mute.cantplayer", "&cCant find this player"));
+            Thread.ofVirtual().start(() -> sender.sendMessage("chatp.mute.cantPlayer", "&cCant find this player"));
             return;
         }
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
@@ -51,13 +51,13 @@ public class Mute extends CommandManager {
 
         MDatabase.isPlayerInGroup(senderUUID).thenCombine(MDatabase.isPlayerInGroup(argUUID), (player1, player2) -> player1 && player2).thenCompose(inGroup -> {
            if(!inGroup) {
-               Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.notsame", "&cYou or that player should be in a group"))));
+               Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.notSame", "&cYou or that player should be in a group"))));
                return CompletableFuture.completedFuture(null);
            }
            return MDatabase.getPlayerTag(senderUUID).thenCombine(MDatabase.getPlayerTag(argUUID), (player1, player2) -> ChatPlugin.tags.get(player1) > ChatPlugin.tags.get(player2));
         }).thenAccept(obj -> {
             if(!obj)
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.cantmute","&cYou cant mute this player"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.mute.cantMute","&cYou cant mute this player"))));
             else
                 MDatabase.setPlayerMuted(argUUID, true);
         }).exceptionallyAsync(exp -> {

@@ -36,10 +36,15 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
             sender.sendMessage(cmd_.getPermissionMSG());
             return true;
         }
+
         if(cooldownManager.hasCooldown(sender.getName())) {
-            cmd_.execute(sender, Arrays.copyOfRange(args, 1, args.length));
-            cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
+            sender.sendMessage();
+            return true;
         }
+
+        cmd_.execute(sender, Arrays.copyOfRange(args, 1, args.length));
+        cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
+
         return true;
     }
 
@@ -54,6 +59,11 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
                 default -> Stream.of("no player found").collect(Collectors.toList());
             };
         } else if(firstArgument.equals("join")) {
+            return switch (args.length) {
+                case 1 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0])).collect(Collectors.toList());
+                default -> Stream.of("no player found").collect(Collectors.toList());
+            };
+        } else if(firstArgument.equals("invite")) {
             return switch (args.length) {
                 case 1 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0])).collect(Collectors.toList());
                 default -> Stream.of("no player found").collect(Collectors.toList());

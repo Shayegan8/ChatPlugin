@@ -24,12 +24,12 @@ public class Remove extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.remove";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.block", "&eblock player from group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.desc", "&eblock player from group"));
     }
 
     @Override
@@ -43,7 +43,7 @@ public class Remove extends CommandManager {
             return;
         }
         if(Bukkit.getPlayer(args[0]) == null) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notfound", "&cCant find this player :("))));
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notFound", "&cCant find this player :("))));
             return;
         }
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
@@ -51,7 +51,7 @@ public class Remove extends CommandManager {
 
         MDatabase.getPlayerGroup(senderUUID).thenCombine(MDatabase.getPlayerGroup(argUUID), String::equals).thenCompose(bothInSameGroup -> {
             if(!bothInSameGroup) {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notfound", "&cYour group and the requested player's group its not the same"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notSame", "&cYour group and the requested player's group its not the same"))));
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.isPlayerInGroup(senderUUID).thenCombine(MDatabase.isPlayerInGroup(Bukkit.getPlayer(argUUID).getUniqueId()), (player1, player2) -> player1 && player2);
@@ -65,7 +65,7 @@ public class Remove extends CommandManager {
             if (tag.equals("admin") || tag.equals("staff")) {
                 MDatabase.setPlayerGroup(argUUID, "none");
                 MDatabase.setPlayerInGroup(argUUID, false);
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.removed", "{player} &asuccessfully removed"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.removed", "%player_name% &asuccessfully removed"))));
             } else {
                 Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.cant", "&cYou are not admin or staff"))));
             }

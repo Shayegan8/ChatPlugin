@@ -24,12 +24,12 @@ public class Quit extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.quit";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.block", "&equit from group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.desc", "&equit from group"));
     }
 
     @Override
@@ -46,7 +46,7 @@ public class Quit extends CommandManager {
 
         MDatabase.isPlayerInGroup(senderUUID).thenAccept(isInGroup -> {
             if(!isInGroup)
-                Thread.ofVirtual().start(() -> ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.notgroup", "&cYou are not in any group")));
+                Thread.ofVirtual().start(() -> ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.notGroup", "&cYou are not in any group")));
             else
                 MDatabase.setPlayerGroup(senderUUID, "none");
         }).exceptionallyAsync(exp -> {

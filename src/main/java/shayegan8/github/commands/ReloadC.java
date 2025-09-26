@@ -20,12 +20,12 @@ public class ReloadC extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.reload";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.block", "&ereload config"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.desc", "&ereload config"));
     }
 
     @Override

@@ -73,8 +73,8 @@ public final class ChatPlugin extends JavaPlugin {
         getLogger().info("Configuration...");
         createConfig();
         getLogger().info("Registering commands...");
-        this.getCommand("chatp").setExecutor(new BaseCommand());
-        this.getCommand("chatp").setTabCompleter(new BaseCommand());
+        this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
+        this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));
         getLogger().info(ColorUtils.C("Establishing connection to database..."));
         mDB = new MDatabase();
         getLogger().info("Registering events...");

@@ -20,12 +20,12 @@ public class Group extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "chatp.base.block";
+        return "chatp.base.group";
     }
 
     @Override
     public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.group.block", "&ecreate a group"));
+        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.group.desc", "&ecreate a group"));
     }
 
     @Override
