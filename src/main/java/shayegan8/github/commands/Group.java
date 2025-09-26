@@ -31,11 +31,11 @@ public class Group extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) { //chatp group create/delete {name}
         if (!(sender instanceof Player) && !(sender.hasPermission(getPermission()))) {
-            sender.sendMessage(getPermissionMSG());
+            Thread.ofVirtual().start(() -> sender.sendMessage(getPermissionMSG()));
             return;
         }
         if (args.length != 2) {
-            sender.sendMessage(getUsage());
+            Thread.ofVirtual().start(() -> sender.sendMessage(getUsage()));
             return;
         }
         switch(args[0]) {

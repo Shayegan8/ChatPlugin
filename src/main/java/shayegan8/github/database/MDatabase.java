@@ -3,16 +3,14 @@ package shayegan8.github.database;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -25,8 +23,10 @@ public class MDatabase {
 
     public MDatabase() {
         try{
-            if(Files.notExists(Paths.get(path)))
-                Files.createDirectory(Paths.get(path));
+            Path path_ = Paths.get(path);
+            if(Files.notExists(path_))
+                Files.createDirectory(path_);
+
             connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb");
             PreparedStatement pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT);");
             pStatement.executeUpdate();
@@ -52,11 +52,29 @@ public class MDatabase {
         return buffer.array();
     }
 
+    /**
+     * @Maybe-unused
+     */
     private static UUID convertToUUID(byte[] bytes) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         long mostSignificantBits = buffer.getLong();
         long leastSignificantBits = buffer.getLong();
         return new UUID(mostSignificantBits, leastSignificantBits);
+    }
+
+    public static CompletableFuture<List<String>> getGroupList() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                List<String> list = new ArrayList<>();
+                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM groups");
+                ResultSet query = pStatement.executeQuery();
+                while(query.next())
+                    list.add(query.getString("groupName"));
+                return list;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public static void createGroup(String groupName) {
@@ -170,7 +188,7 @@ public class MDatabase {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerUUID=?");
                 String playerTag = null;
                 pState.setBytes(2, convertToBlob(playerUUID));
-                var query = pState.executeQuery();
+                ResultSet query = pState.executeQuery();
                 while (query.next())
                     playerTag = query.getString("playerTag");
                 return playerTag;
@@ -185,7 +203,7 @@ public class MDatabase {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM groups WHERE groupName=?");
                 pState.setString(1, groupName);
-                var query = pState.executeQuery();
+                ResultSet query = pState.executeQuery();
                 return query.next();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -199,7 +217,7 @@ public class MDatabase {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT inGroup FROM players WHERE playerUUID=?");
                 Boolean inGroup = null;
                 pState.setBytes(2, convertToBlob(playerUUID));
-                var query = pState.executeQuery();
+                ResultSet query = pState.executeQuery();
                 while (query.next())
                     inGroup = query.getBoolean("inGroup");
                 return inGroup;
@@ -215,7 +233,7 @@ public class MDatabase {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT muted FROM players WHERE playerUUID=?");
                 Boolean muted = null;
                 pState.setBytes(2, convertToBlob(playerUUID));
-                var query = pState.executeQuery();
+                ResultSet query = pState.executeQuery();
                 while (query.next())
                     muted = query.getBoolean("muted");
                 return muted;
@@ -231,7 +249,7 @@ public class MDatabase {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT invited FROM players WHERE playerUUID=?");
                 Boolean invited = null;
                 pState.setBytes(2, convertToBlob(playerUUID));
-                var query = pState.executeQuery();
+                ResultSet query = pState.executeQuery();
                 while (query.next())
                     invited = query.getBoolean("invited");
                 return invited;

@@ -16,7 +16,7 @@ public class Grouping implements Listener {
         String msg = e.getMessage();
         UUID uuid = e.getPlayer().getUniqueId();
         e.setCancelled(true);
-        Bukkit.getOnlinePlayers().forEach((eachPlayer) -> {
+        Bukkit.getOnlinePlayers().forEach(eachPlayer -> {
             MDatabase.getPlayerGroup(eachPlayer.getUniqueId()).thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenAccept((condition) -> {
                 if(condition)
                     eachPlayer.sendMessage(msg);
@@ -29,7 +29,7 @@ public class Grouping implements Listener {
     @EventHandler
     public void onChat_(AsyncPlayerChatEvent e) {
         UUID uuid = e.getPlayer().getUniqueId();
-        MDatabase.isPlayerMuted(uuid).thenAccept((condition) -> {
+        MDatabase.isPlayerMuted(uuid).thenAccept(condition -> {
             if(!condition)
                 return;
             e.setCancelled(true);
@@ -39,7 +39,7 @@ public class Grouping implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         UUID uuid = e.getPlayer().getUniqueId();
-        MDatabase.isPlayerInGroup(uuid).thenAccept((condition) -> {
+        MDatabase.isPlayerInGroup(uuid).thenAccept(condition -> {
            if(condition)
                return;
            MDatabase.setPlayerGroup(uuid, "none");

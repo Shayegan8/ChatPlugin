@@ -8,6 +8,7 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Quit extends CommandManager {
 
@@ -34,23 +35,23 @@ public class Quit extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if(!(sender instanceof Player) && !(sender.hasPermission(getPermission()))) {
-            sender.sendMessage(getPermissionMSG());
+            Thread.ofVirtual().start(() ->  sender.sendMessage(getPermissionMSG()));
             return;
         }
         if(args.length != 0) {
-            sender.sendMessage(getUsage());
+            Thread.ofVirtual().start(() -> sender.sendMessage(getUsage()));
             return;
         }
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
 
-        MDatabase.isPlayerInGroup(senderUUID).thenAccept((isInGroup) -> {
+        MDatabase.isPlayerInGroup(senderUUID).thenAccept(isInGroup -> {
             if(!isInGroup)
-                ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.notgroup", "&cYou are not in any group"));
+                Thread.ofVirtual().start(() -> ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.notgroup", "&cYou are not in any group")));
             else
                 MDatabase.setPlayerGroup(senderUUID, "none");
-        }).exceptionally((exp) -> {
+        }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.error", "&cAn error occurred")));
-            throw new IllegalStateException(exp);
+            throw new RuntimeException(exp);
         });
     }
 }

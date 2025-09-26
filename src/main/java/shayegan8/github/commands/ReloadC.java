@@ -30,9 +30,9 @@ public class ReloadC extends CommandManager {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        CompletableFuture.runAsync(ChatPlugin::loadChat).exceptionally((exp) -> {
+        CompletableFuture.runAsync(ChatPlugin::loadChat).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.reload.error", "&cAn error occurred")));
-            throw new IllegalStateException(exp.getMessage());
+            throw new RuntimeException(exp.getMessage());
         });
         sender.sendMessage("Plugin configuration reloaded");
     }

@@ -31,12 +31,12 @@ public class Help extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         CompletableFuture.runAsync(() -> {
-            ChatPlugin.configuration.getStringList("player.help").forEach((str) -> {
+            ChatPlugin.configuration.getStringList("player.help").forEach(str -> {
                 sender.sendMessage(ColorUtils.C(str));
             });
-        }).exceptionally((exp) -> {
+        }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.help.error", "&cAn error occurred")));
-            throw new IllegalStateException(exp);
+            throw new RuntimeException(exp);
         });
     }
 }

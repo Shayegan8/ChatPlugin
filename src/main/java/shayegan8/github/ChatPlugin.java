@@ -1,5 +1,6 @@
 package shayegan8.github;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -7,6 +8,7 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.annotation.command.Command;
 import org.bukkit.plugin.java.annotation.command.Commands;
+import org.bukkit.plugin.java.annotation.dependency.SoftDependency;
 import org.bukkit.plugin.java.annotation.permission.Permission;
 import org.bukkit.plugin.java.annotation.plugin.Description;
 import org.bukkit.plugin.java.annotation.plugin.Plugin;
@@ -14,6 +16,7 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
+import shayegan8.github.expansions.PPlayer;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +52,7 @@ import java.util.Map;
         @Command(name = "chatp friends", desc = "chatplugin friends command", permission = "chatp.base.friends", usage = "/chatp friends")
     }
 )
+@SoftDependency("PlaceholderAPI")
 
 public final class ChatPlugin extends JavaPlugin {
 
@@ -66,16 +70,23 @@ public final class ChatPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getLogger().info(ColorUtils.C("Configuration..."));
+        getLogger().info("Configuration...");
         createConfig();
-        getLogger().info(ColorUtils.C("Registering commands..."));
+        getLogger().info("Registering commands...");
         this.getCommand("chatp").setExecutor(new BaseCommand());
         this.getCommand("chatp").setTabCompleter(new BaseCommand());
         getLogger().info(ColorUtils.C("Establishing connection to database..."));
         mDB = new MDatabase();
-        getLogger().info(ColorUtils.C("Registering events..."));
+        getLogger().info("Registering events...");
         getServer().getPluginManager().registerEvents(new Grouping(), this);
-        getLogger().info(ColorUtils.C(GREEN + "ChatPlugin enabled" + REFRESH));
+        getLogger().info("Registering placeholders (PlaceholderAPI)");
+        if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new PPlayer(this).register();
+            getLogger().info(GREEN + "ChatPlugin enabled" + REFRESH);
+        } else {
+            getLogger().info(RED + "Couldn't find PlaceholderAPI, disabling plugin..." + REFRESH);
+            getPluginLoader().disablePlugin(this);
+        }
     }
 
     @Override

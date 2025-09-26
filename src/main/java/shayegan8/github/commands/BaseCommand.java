@@ -1,5 +1,6 @@
 package shayegan8.github.commands;
 
+import lombok.AllArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,14 +10,16 @@ import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@AllArgsConstructor
 public class BaseCommand implements CommandExecutor, TabExecutor {
+
+    private CooldownManager cooldownManager;
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -33,8 +36,10 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
             sender.sendMessage(cmd_.getPermissionMSG());
             return true;
         }
-        cmd_.execute(sender, Arrays.copyOfRange(args, 1, args.length));
-
+        if(cooldownManager.hasCooldown(sender.getName())) {
+            cmd_.execute(sender, Arrays.copyOfRange(args, 1, args.length));
+            cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
+        }
         return true;
     }
 
@@ -44,10 +49,13 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
 
         if(firstArgument.equals("group")) {
             return switch (args.length) {
-                case 2 ->
-                        Stream.of("create", "delete", "help").filter((x) -> x.startsWith(args[1])).collect(Collectors.toList());
-                case 3 ->
-                        Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[2])).collect(Collectors.toList());
+                case 2 -> Stream.of("create", "delete", "help").filter((x) -> x.startsWith(args[1])).collect(Collectors.toList());
+                case 3 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[2])).collect(Collectors.toList());
+                default -> Stream.of("no player found").collect(Collectors.toList());
+            };
+        } else if(firstArgument.equals("join")) {
+            return switch (args.length) {
+                case 1 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0])).collect(Collectors.toList());
                 default -> Stream.of("no player found").collect(Collectors.toList());
             };
         }

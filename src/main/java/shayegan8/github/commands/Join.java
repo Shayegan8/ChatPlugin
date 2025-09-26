@@ -8,6 +8,7 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Join extends CommandManager {
 
@@ -34,22 +35,22 @@ public class Join extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if(!(sender instanceof Player) && !(sender.hasPermission(getPermission()))) {
-            sender.sendMessage(getPermissionMSG());
+            Thread.ofVirtual().start(() -> sender.sendMessage(getPermissionMSG()));
             return;
         }
         if(args.length != 1) {
-            sender.sendMessage(getUsage());
+            Thread.ofVirtual().start(() -> sender.sendMessage(getUsage()));
             return;
         }
         UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
-        MDatabase.isPlayerInvited(senderUUID).thenAccept((invited) -> {
+        MDatabase.isPlayerInvited(senderUUID).thenAccept(invited -> {
             if(!invited)
-                sender.sendMessage("You should be invited first");
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.invitedfirst", "You should be invited first"))));
             else
                 MDatabase.setPlayerGroup(senderUUID, args[0]);
-        }).exceptionally((exp) -> {
+        }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.join.error", "&cAn error occurred")));
-            throw new IllegalStateException(exp);
+            throw new RuntimeException(exp);
         });;
     }
 }
