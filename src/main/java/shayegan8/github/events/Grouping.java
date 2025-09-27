@@ -25,7 +25,6 @@ public class Grouping implements Listener {
             });
         });
         ChatPlugin.getPlugin(ChatPlugin.class).getLogger().info(msg);
-        e.getPlayer().sendMessage(msg);
     }
 
     @EventHandler
