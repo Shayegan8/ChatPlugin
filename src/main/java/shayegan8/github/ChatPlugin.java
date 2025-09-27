@@ -75,7 +75,7 @@ public final class ChatPlugin extends JavaPlugin {
         this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
         this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));
         getLogger().info("Establishing connection to database...");
-        mDB = new MDatabase();
+        mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
         getLogger().info("Registering events...");
         getServer().getPluginManager().registerEvents(new Grouping(), this);
         getLogger().info("Registering placeholders (PlaceholderAPI)");

@@ -18,17 +18,25 @@ import java.util.concurrent.CompletableFuture;
 @Getter
 public class MDatabase {
 
-    private final Connection connection;
+    private Connection connection = null;
+    private final String name;
 
     private final static String path = ChatPlugin.getPlugin(ChatPlugin.class).getDataFolder() + "/database";
 
-    public MDatabase() {
-        try{
+    public MDatabase(String name) {
+        this.name = name;
+        try {
             Path path_ = Paths.get(path);
             if(Files.notExists(path_))
                 Files.createDirectory(path_);
-
-            connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb");
+            switch (name) {
+                case "sqlite":
+                    connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb");
+                    break;
+                case "postgresql":
+                    connection = DriverManager.getConnection("jdbc:postgresql://" + ChatPlugin.configuration.getString("db.host", "localhost" + ":" + ChatPlugin.configuration.getString("db.port", "3306") + "/" + ChatPlugin.configuration.getString("db.name", "chatp")), ChatPlugin.configuration.getString("db.userName", "test"), ChatPlugin.configuration.getString("db.password", "1234"));
+                    break;
+            }
             PreparedStatement pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT);");
             pStatement.executeUpdate();
             pStatement = connection
@@ -67,7 +75,6 @@ public class MDatabase {
                 return list;
             } catch (SQLException e) {
                 throw new RuntimeException(Arrays.toString(e.getStackTrace()));
-                
             }
         });
     }

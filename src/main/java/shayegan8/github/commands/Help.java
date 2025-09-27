@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 public class Help extends CommandManager {
@@ -25,7 +26,7 @@ public class Help extends CommandManager {
             });
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.help.error", "&cAn error occurred")));
-            throw new RuntimeException(exp);
+            throw new RuntimeException(Arrays.toString(exp.getStackTrace()));
         });
     }
 }

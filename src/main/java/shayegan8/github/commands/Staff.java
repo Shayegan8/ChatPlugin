@@ -6,7 +6,7 @@ public class Staff extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "";
+        return "chatp.base.staff";
     }
 
     @Override
