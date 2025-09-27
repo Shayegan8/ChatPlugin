@@ -1,6 +1,7 @@
 package shayegan8.github.events;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -39,13 +40,12 @@ public class Grouping implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        UUID uuid = e.getPlayer().getUniqueId();
-        MDatabase.isPlayerInGroup(uuid).thenAccept(condition -> {
-           if(condition)
-               return;
-           MDatabase.setPlayerGroup(uuid, "none");
-           MDatabase.setPlayerTag(uuid, "none");
-           MDatabase.setPlayerInGroup(uuid, false);
-        });
+        Player player = e.getPlayer();
+        UUID uuid = player.getUniqueId();
+        if(player.hasPlayedBefore()) {
+            MDatabase.setPlayerGroup(uuid, "none");
+            MDatabase.setPlayerTag(uuid, "none");
+            MDatabase.setPlayerInGroup(uuid, false);
+        }
     }
 }
