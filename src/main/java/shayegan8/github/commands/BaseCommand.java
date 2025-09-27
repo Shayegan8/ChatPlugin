@@ -24,7 +24,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if(args.length == 0) {
-            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration
+            sender.sendMessage(ColorUtils.C((Player)sender, (String) ChatPlugin.configuration
                     .get("chatp.argszero", "&c/chatp help to get instruction for all commands")));
             return true;
         }
@@ -33,7 +33,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
             return true;
 
         if(!sender.hasPermission(cmd_.getPermission())) {
-            sender.sendMessage(cmd_.getPermissionMSG());
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((Player)sender, ChatPlugin.configuration.getString("chatp.permissionMSG", "&cYou dont have a permission!"))));
             return true;
         }
 
@@ -41,7 +41,6 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
             sender.sendMessage();
             return true;
         }
-
         cmd_.execute(sender, Arrays.copyOfRange(args, 1, args.length));
         cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
 
@@ -51,25 +50,21 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         String firstArgument = args[0];
-
-        if(firstArgument.equals("group")) {
-            return switch (args.length) {
-                case 2 -> Stream.of("create", "delete", "help").filter((x) -> x.startsWith(args[1])).collect(Collectors.toList());
-                case 3 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[2])).collect(Collectors.toList());
+        return switch (firstArgument) {
+            case "group" -> switch (args.length) { //chatp group create name
+                case 1 ->
+                        Stream.of("create", "delete", "help").filter((x) -> x.startsWith(args[0])).collect(Collectors.toList());
+                case 2 ->
+                        Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[1])).collect(Collectors.toList());
                 default -> Stream.of("no player found").collect(Collectors.toList());
             };
-        } else if(firstArgument.equals("join")) {
-            return switch (args.length) {
-                case 1 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0])).collect(Collectors.toList());
+            case "join", "invite" -> switch (args.length) {
+                case 1 ->
+                        Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0])).collect(Collectors.toList());
                 default -> Stream.of("no player found").collect(Collectors.toList());
             };
-        } else if(firstArgument.equals("invite")) {
-            return switch (args.length) {
-                case 1 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0])).collect(Collectors.toList());
-                default -> Stream.of("no player found").collect(Collectors.toList());
-            };
-        }
-
-        return Stream.of("remove", "reload", "quit", "mute", "join", "invite", "help", "group", "friends").filter((x) -> x.startsWith(firstArgument)).collect(Collectors.toList());
+            default ->
+                    Stream.of("remove", "reload", "quit", "mute", "join", "invite", "help", "group", "friends").filter((x) -> x.startsWith(firstArgument)).collect(Collectors.toList());
+        };
     }
 }

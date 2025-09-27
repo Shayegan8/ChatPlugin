@@ -17,8 +17,4 @@ public class CooldownManager {
         Instant cooldown = waitings.get(playerName);
         return waitings.get(playerName) != null && Instant.now().isBefore(cooldown);
     }
-
-    public long remainedTime(String playerName) {
-        return Duration.between(Instant.now(), waitings.get(playerName)).getSeconds();
-    }
 }

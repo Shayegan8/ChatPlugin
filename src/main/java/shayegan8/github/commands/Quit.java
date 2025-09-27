@@ -14,43 +14,39 @@ public class Quit extends CommandManager {
 
     @Override
     public String getUsage() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.usage" ,"&e/chatp reload"));
+        return "&e/chatp reload";
     }
 
-    @Override
-    public String getPermissionMSG() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.permissionMSG", "&cYou dont have a permission!"));
-    }
 
     @Override
     public String getPermission() {
         return "chatp.base.quit";
     }
 
-    @Override
-    public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.desc", "&equit from group"));
-    }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if(!(sender instanceof Player) && !(sender.hasPermission(getPermission()))) {
-            Thread.ofVirtual().start(() ->  sender.sendMessage(getPermissionMSG()));
+        if(!(sender instanceof Player player)) {
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.quit.notPlayer", "&cCant find this player"))));
             return;
         }
         if(args.length != 0) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(getUsage()));
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.quit.usage", getUsage()))));
             return;
         }
-        UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
+        UUID senderUUID = player.getUniqueId();
 
         MDatabase.isPlayerInGroup(senderUUID).thenAccept(isInGroup -> {
             if(!isInGroup)
-                Thread.ofVirtual().start(() -> ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.notGroup", "&cYou are not in any group")));
-            else
+                Thread.ofVirtual().start(() -> ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.quit.notGroup", "&cYou are not in any group")));
+            else {
+                MDatabase.setPlayerTag(senderUUID, "none");
                 MDatabase.setPlayerGroup(senderUUID, "none");
+                MDatabase.setPlayerInGroup(senderUUID, false);
+                Thread.ofVirtual().start(() -> ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.quit.quit", "&eYou are no longer in this group")));
+            }
         }).exceptionallyAsync(exp -> {
-            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.quit.error", "&cAn error occurred")));
+            sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.quit.error", "&cAn error occurred")));
             throw new RuntimeException(exp);
         });
     }

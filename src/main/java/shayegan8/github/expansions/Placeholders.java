@@ -14,15 +14,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class PPlayer extends PlaceholderExpansion {
+public class Placeholders extends PlaceholderExpansion {
 
     private final Plugin plugin;
     public Map<UUID, ObjectWithTime> cache_group = new ConcurrentHashMap<>();
     public Map<UUID, ObjectWithTime> cache_tag = new ConcurrentHashMap<>();
-    private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public PPlayer(Plugin plugin) {
+    public Placeholders(Plugin plugin) {
         this.plugin = plugin;
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(this::clean, 60, 60, TimeUnit.SECONDS);
     }
 
@@ -81,7 +81,6 @@ public class PPlayer extends PlaceholderExpansion {
         return objT.result();
     }
 
-
     private void updateGroup(UUID uuid) {
         MDatabase.getPlayerGroup(uuid).thenAccept(group -> {
             Thread.ofVirtual().start(() -> cache_group.put(uuid, new ObjectWithTime(group, System.currentTimeMillis())));
@@ -93,5 +92,4 @@ public class PPlayer extends PlaceholderExpansion {
             Thread.ofVirtual().start(() -> cache_tag.put(uuid, new ObjectWithTime(tag, System.currentTimeMillis())));
         });
     }
-
 }

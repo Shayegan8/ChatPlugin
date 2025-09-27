@@ -16,7 +16,7 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
-import shayegan8.github.expansions.PPlayer;
+import shayegan8.github.expansions.Placeholders;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,13 +75,13 @@ public final class ChatPlugin extends JavaPlugin {
         getLogger().info("Registering commands...");
         this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
         this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));
-        getLogger().info(ColorUtils.C("Establishing connection to database..."));
+        getLogger().info("Establishing connection to database...");
         mDB = new MDatabase();
         getLogger().info("Registering events...");
         getServer().getPluginManager().registerEvents(new Grouping(), this);
         getLogger().info("Registering placeholders (PlaceholderAPI)");
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new PPlayer(this).register();
+            new Placeholders(this).register();
             getLogger().info(GREEN + "ChatPlugin enabled" + REFRESH);
         } else {
             getLogger().info(RED + "Couldn't find PlaceholderAPI, disabling plugin..." + REFRESH);
@@ -97,7 +97,7 @@ public final class ChatPlugin extends JavaPlugin {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        getLogger().info(ColorUtils.C(RED + "ChatPlugin disabled" + REFRESH));
+        getLogger().info(RED + "ChatPlugin disabled" + REFRESH);
     }
 
     private void createConfig() {

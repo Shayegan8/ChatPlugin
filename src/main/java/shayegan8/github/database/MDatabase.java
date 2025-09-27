@@ -117,6 +117,20 @@ public class MDatabase {
         });
     }
 
+    public static String getPlayerGroupBlocking(UUID playerUUID) {
+        try {
+            PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerUUID = ?");
+            String groupName = null;
+            pState.setBytes(1, convertToBlob(playerUUID));
+            var query = pState.executeQuery();
+            while (query.next())
+                groupName = query.getString("groupName");
+            return groupName;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void setPlayerGroup(UUID playerUUID, String groupName) {
         CompletableFuture.runAsync(() -> {
             try {
@@ -196,6 +210,20 @@ public class MDatabase {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static String getPlayerTagBlocking(UUID playerUUID) {
+        try {
+            PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerUUID = ?");
+            String playerTag = null;
+            pState.setBytes(1, convertToBlob(playerUUID));
+            var query = pState.executeQuery();
+            while (query.next())
+                playerTag = query.getString("groupName");
+            return playerTag;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static CompletableFuture<Boolean> isGroupExist(String groupName) {

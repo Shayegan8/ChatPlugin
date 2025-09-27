@@ -14,12 +14,7 @@ public class Remove extends CommandManager {
 
     @Override
     public String getUsage() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.usage" ,"&e/chatp block &cplayerName"));
-    }
-
-    @Override
-    public String getPermissionMSG() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.permissionMSG", "&cYou dont have a permission!"));
+        return "&e/chatp block &cplayerName";
     }
 
     @Override
@@ -28,14 +23,9 @@ public class Remove extends CommandManager {
     }
 
     @Override
-    public String getDescription() {
-        return ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.desc", "&eblock player from group"));
-    }
-
-    @Override
     public void execute(CommandSender sender, String[] args) {
-        if(!(sender instanceof Player) && !(sender.hasPermission(getPermission()))) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(getPermissionMSG()));
+        if(!(sender instanceof Player player)) {
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.remove.notPlayer", "&cYou should be a player"))));
             return;
         }
         if(args.length != 1) {
@@ -43,34 +33,35 @@ public class Remove extends CommandManager {
             return;
         }
         if(Bukkit.getPlayer(args[0]) == null) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notFound", "&cCant find this player :("))));
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.notFound", "&cCant find this player :("))));
             return;
         }
-        UUID senderUUID = Bukkit.getPlayer(sender.getName()).getUniqueId();
+        UUID senderUUID = player.getUniqueId();
         UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 
         MDatabase.getPlayerGroup(senderUUID).thenCombine(MDatabase.getPlayerGroup(argUUID), String::equals).thenCompose(bothInSameGroup -> {
             if(!bothInSameGroup) {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.notSame", "&cYour group and the requested player's group its not the same"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.notSame", "&cYour group and the requested player's group its not the same"))));
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.isPlayerInGroup(senderUUID).thenCombine(MDatabase.isPlayerInGroup(Bukkit.getPlayer(argUUID).getUniqueId()), (player1, player2) -> player1 && player2);
         }).thenCompose(bothAreInGroup -> {
             if(!bothAreInGroup) {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.both", "&cboth players are not in group"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.both", "&cboth players are not in group"))));
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.getPlayerTag(senderUUID);
         }).thenAccept(tag -> {
             if (tag.equals("admin") || tag.equals("staff")) {
                 MDatabase.setPlayerGroup(argUUID, "none");
+                MDatabase.setPlayerTag(argUUID, "none");
                 MDatabase.setPlayerInGroup(argUUID, false);
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.removed", "%player_name% &asuccessfully removed"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.removed", "%player_name% &asuccessfully removed"))));
             } else {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.cant", "&cYou are not admin or staff"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.cant", "&cYou are not admin or staff"))));
             }
         }).exceptionallyAsync(exp -> {
-            sender.sendMessage(ColorUtils.C((String) ChatPlugin.configuration.get("chatp.remove.error", "&cAn error occurred")));
+            sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.error", "&cAn error occurred")));
             throw new RuntimeException(exp);
         });
     }
