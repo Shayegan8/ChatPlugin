@@ -1,4 +1,7 @@
 .idea
+.classpath
+.factorypath
+.project
+.settings
 ChatPlugin.iml
 target
-lib
