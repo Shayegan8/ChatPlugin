@@ -9,6 +9,7 @@ import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 public class Quit extends CommandManager {
 

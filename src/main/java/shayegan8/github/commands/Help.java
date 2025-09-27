@@ -17,7 +17,7 @@ public class Help extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         CompletableFuture.runAsync(() -> {
-            ChatPlugin.configuration.getStringList("chatp.help").forEach(str -> {
+            ChatPlugin.configuration.getStringList("chatp.help.list").forEach(str -> {
                 if(sender instanceof Player player)
                     sender.sendMessage(ColorUtils.C(player, str));
                 else

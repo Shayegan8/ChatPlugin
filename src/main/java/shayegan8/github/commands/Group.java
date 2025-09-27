@@ -8,6 +8,7 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Group extends CommandManager {
 
@@ -49,18 +50,36 @@ public class Group extends CommandManager {
         if (args.length == 2) {
             switch (args[0]) {
                 case "create":
-                    MDatabase.createGroup(args[1]);
-                    MDatabase.setPlayerInGroup(uuid, true);
-                    MDatabase.setPlayerTag(uuid, "admin");
-                    MDatabase.setPlayerGroup(uuid, args[1]);
-                    Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.created", "&e%chatp_group% &ahas been created"))));
+                    MDatabase.isPlayerInGroup(uuid).thenAccept((check) -> {
+                        if(check) {
+                            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.cantCreate", "&cYou are already in a group"))));
+                            return;
+                        }
+                        MDatabase.createGroup(args[1]);
+                        MDatabase.setPlayerInGroup(uuid, true);
+                        MDatabase.setPlayerTag(uuid, "admin");
+                        MDatabase.setPlayerGroup(uuid, args[1]);
+                        Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.created", "&e%chatp_group% &ahas been created"))));
+                    });
                     break;
                 case "delete":
                     Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.deleted", "&e%chatp_group% &chas been deleted"))));
-                    MDatabase.deleteGroup(args[1]);
-                    MDatabase.setPlayerInGroup(uuid, false);
-                    MDatabase.setPlayerTag(uuid, "none");
-                    MDatabase.setPlayerGroup(uuid, "none");
+                    MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
+                        if(!check) {
+                            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.notIn", "&eYou are not in group"))));
+                            return CompletableFuture.completedFuture(null);
+                        }
+                        return MDatabase.getPlayerTag(uuid);
+                    }).thenAccept((tag) -> {
+                        if(!tag.equalsIgnoreCase("admin")) {
+                            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.admin", "&eYou are not admin"))));
+                            return;
+                        }
+                        MDatabase.deleteGroup(args[1]);
+                        MDatabase.setPlayerInGroup(uuid, false);
+                        MDatabase.setPlayerTag(uuid, "none");
+                        MDatabase.setPlayerGroup(uuid, "none");
+                    });
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
@@ -74,11 +93,10 @@ public class Group extends CommandManager {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) { //chatp group create/delete {name} or /ch
+    public void execute(CommandSender sender, String[] args) {
         if(!(sender instanceof Player))
             console(sender, args);
         else
             player(sender, args);
     }
-
 }

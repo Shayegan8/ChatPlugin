@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +35,7 @@ public class MDatabase {
                     .prepareStatement
                             ("CREATE TABLE IF NOT EXISTS players " +
                                     "(groupName TEXT references groups(groupName) ON DELETE SET NULL," +
-                                    " playerUUID BLOB, " +
+                                    " playerUUID BLOB PRIMARY KEY, " +
                                     "playerTag TEXT, " +
                                     "inGroup BOOLEAN, " +
                                     "muted BOOLEAN, " +
@@ -43,13 +44,6 @@ public class MDatabase {
         } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static byte[] convertToBlob(UUID playerUUID) {
-        ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
-        buffer.putLong(playerUUID.getMostSignificantBits());
-        buffer.putLong(playerUUID.getLeastSignificantBits());
-        return buffer.array();
     }
 
     /**
@@ -72,7 +66,8 @@ public class MDatabase {
                     list.add(query.getString("groupName"));
                 return list;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
     }
@@ -80,11 +75,12 @@ public class MDatabase {
     public static void createGroup(String groupName) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("INSERT OR IGNORE INTO groups (groupname) VALUES (?)");
+                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("INSERT INTO groups SELECT ? WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groupName = ?)");
                 pStatement.setString(1, groupName);
+                pStatement.setString(2, groupName);
                 pStatement.executeUpdate();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
             }
         });
     }
@@ -92,7 +88,7 @@ public class MDatabase {
     public static void deleteGroup(String groupName) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("ALTER TABLE groups DROP COLUMN ?");
+                PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement("DELETE FROM groups WHERE groupName=?");
                 pStatement.setString(1, groupName);
                 pStatement.executeUpdate();
             } catch (SQLException e) {
@@ -112,7 +108,8 @@ public class MDatabase {
                     groupName = query.getString("groupName");
                 return groupName;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
     }
@@ -125,21 +122,28 @@ public class MDatabase {
             var query = pState.executeQuery();
             while (query.next())
                 groupName = query.getString("groupName");
+            System.out.println(4);
             return groupName;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+            
         }
     }
 
     public static void setPlayerGroup(UUID playerUUID, String groupName) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET groupName=? WHERE playerUUID=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("INSERT INTO players (groupName, playerUUID) VALUES (?, ?)" +
+                        " ON CONFLICT(playerUUID) DO UPDATE SET groupName=excluded.groupName");
+                System.out.println(1);
                 pState.setString(1, groupName);
+                System.out.println(2);
                 pState.setBytes(2, convertToBlob(playerUUID));
+                System.out.println(3);
                 pState.executeUpdate();
+                System.out.println(4);
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
             }
         });
     }
@@ -147,12 +151,13 @@ public class MDatabase {
     public static void setPlayerTag(UUID playerUUID, String playerTag) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET playerTag=? WHERE playerUUID=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("INSERT INTO players (playerTag, playerUUID) VALUES (?, ?)" +
+                        " ON CONFLICT(playerUUID) DO UPDATE SET playerTag=excluded.playerTag");
                 pState.setString(1, playerTag);
                 pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
             }
         });
     }
@@ -160,12 +165,13 @@ public class MDatabase {
     public static void setPlayerInGroup(UUID playerUUID, boolean inGroup) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET inGroup=? WHERE playerUUID=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("INSERT INTO players (inGroup, playerUUID) VALUES (?, ?)" +
+                        " ON CONFLICT(playerUUID) DO UPDATE SET inGroup=excluded.inGroup");
                 pState.setBoolean(1, inGroup);
                 pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
             }
         });
     }
@@ -173,12 +179,13 @@ public class MDatabase {
     public static void setPlayerMuted(UUID playerUUID, boolean muted) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET muted=? WHERE playerUUID=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("INSERT INTO players (muted, playerUUID) VALUES (?, ?)" +
+                        " ON CONFLICT(playerUUID) DO UPDATE SET muted=excluded.muted");
                 pState.setBoolean(1, muted);
                 pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
             }
         });
     }
@@ -186,12 +193,13 @@ public class MDatabase {
     public static void setPlayerInvited(UUID playerUUID, boolean invited) {
         CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("UPDATE players SET invited=? WHERE playerUUID=?");
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("INSERT INTO players (invited, playerUUID) VALUES (?, ?)" +
+                        " ON CONFLICT(playerUUID) DO UPDATE SET invited=excluded.invited");
                 pState.setBoolean(1, invited);
                 pState.setBytes(2, convertToBlob(playerUUID));
                 pState.executeUpdate();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
             }
         });
     }
@@ -201,13 +209,14 @@ public class MDatabase {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT playerTag FROM players WHERE playerUUID=?");
                 String playerTag = null;
-                pState.setBytes(2, convertToBlob(playerUUID));
+                pState.setBytes(1, convertToBlob(playerUUID));
                 ResultSet query = pState.executeQuery();
                 while (query.next())
                     playerTag = query.getString("playerTag");
                 return playerTag;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
     }
@@ -222,7 +231,8 @@ public class MDatabase {
                 playerTag = query.getString("groupName");
             return playerTag;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+            
         }
     }
 
@@ -234,7 +244,8 @@ public class MDatabase {
                 ResultSet query = pState.executeQuery();
                 return query.next();
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
     }
@@ -244,13 +255,14 @@ public class MDatabase {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT inGroup FROM players WHERE playerUUID=?");
                 Boolean inGroup = null;
-                pState.setBytes(2, convertToBlob(playerUUID));
+                pState.setBytes(1, convertToBlob(playerUUID));
                 ResultSet query = pState.executeQuery();
                 while (query.next())
                     inGroup = query.getBoolean("inGroup");
                 return inGroup;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
     }
@@ -260,15 +272,23 @@ public class MDatabase {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT muted FROM players WHERE playerUUID=?");
                 Boolean muted = null;
-                pState.setBytes(2, convertToBlob(playerUUID));
+                pState.setBytes(1, convertToBlob(playerUUID));
                 ResultSet query = pState.executeQuery();
                 while (query.next())
                     muted = query.getBoolean("muted");
                 return muted;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
+    }
+
+    private static byte[] convertToBlob(UUID playerUUID) {
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
+        buffer.putLong(playerUUID.getMostSignificantBits());
+        buffer.putLong(playerUUID.getLeastSignificantBits());
+        return buffer.array();
     }
 
     public static CompletableFuture<Boolean> isPlayerInvited(UUID playerUUID) {
@@ -276,13 +296,14 @@ public class MDatabase {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT invited FROM players WHERE playerUUID=?");
                 Boolean invited = null;
-                pState.setBytes(2, convertToBlob(playerUUID));
+                pState.setBytes(1, convertToBlob(playerUUID));
                 ResultSet query = pState.executeQuery();
                 while (query.next())
                     invited = query.getBoolean("invited");
                 return invited;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException(Arrays.toString(e.getStackTrace()));
+                
             }
         });
     }

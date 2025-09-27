@@ -22,19 +22,19 @@ public class Placeholders extends PlaceholderExpansion {
 
     public Placeholders(Plugin plugin) {
         this.plugin = plugin;
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this::clean, 60, 60, TimeUnit.SECONDS);
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+        scheduler.scheduleAtFixedRate(this::clean, 10, 10, TimeUnit.SECONDS);
     }
 
     private void clean() {
         for (UUID key : cache_group.keySet()) {
             ObjectWithTime objT = cache_group.get(key);
-            if(objT != null && System.currentTimeMillis() - objT.time() >= 60000)
+            if(objT != null && System.currentTimeMillis() - objT.time() >= 10000)
                 cache_group.remove(key);
         }
         for (UUID key : cache_tag.keySet()) {
             ObjectWithTime objT = cache_tag.get(key);
-            if(objT != null && System.currentTimeMillis() - objT.time() >= 60000)
+            if(objT != null && System.currentTimeMillis() - objT.time() >= 10000)
                 cache_tag.remove(key);
         }
     }

@@ -13,6 +13,7 @@ import shayegan8.github.ColorUtils;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,25 +25,32 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if(args.length == 0) {
-            sender.sendMessage(ColorUtils.C((Player)sender, (String) ChatPlugin.configuration
-                    .get("chatp.argszero", "&c/chatp help to get instruction for all commands")));
+            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((Player)sender, (String) ChatPlugin.configuration
+                    .get("chatp.usage", "&c/chatp help to get instruction for all commands"))));
             return true;
         }
+
         CommandManager cmd_ = ChatPlugin.commands.get(args[0].toLowerCase());
         if(cmd_ == null)
             return true;
+
+        CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getBoolean("cooldown", false)).thenAccept((bool) -> {
+            Thread.ofVirtual().start(() -> {
+                if(!bool)
+                    return;
+                if(cooldownManager.hasCooldown(sender.getName())) {
+                    sender.sendMessage(String.valueOf(cooldownManager.getRemained(sender.getName())));
+                }
+                cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
+            });
+        });
 
         if(!sender.hasPermission(cmd_.getPermission())) {
             Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((Player)sender, ChatPlugin.configuration.getString("chatp.permissionMSG", "&cYou dont have a permission!"))));
             return true;
         }
 
-        if(cooldownManager.hasCooldown(sender.getName())) {
-            sender.sendMessage();
-            return true;
-        }
         cmd_.execute(sender, Arrays.copyOfRange(args, 1, args.length));
-        cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
 
         return true;
     }

@@ -50,14 +50,16 @@ public class Mute extends CommandManager {
             if(!obj)
                 Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.mute.cantMute","&cYou cant mute this player"))));
             else {
+                if(args[0].equals(sender.getName())) {
+                    Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.mute.cantFuckYourself","&cYou cant mute yourself"))));
+                    return;
+                }
                 MDatabase.setPlayerMuted(argUUID, true);
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.mute.muted","&cPlayer muted"))));
+                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.mute.muted","&ePlayer muted"))));
             }
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.mute.error", "&cAn error occurred")));
             throw new RuntimeException(exp);
         });
-
     }
-
 }

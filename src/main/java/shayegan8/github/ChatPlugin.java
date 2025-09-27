@@ -53,7 +53,6 @@ import java.util.Map;
     }
 )
 @SoftDependency("PlaceholderAPI")
-
 public final class ChatPlugin extends JavaPlugin {
 
     private static File file_;

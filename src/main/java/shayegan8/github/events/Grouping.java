@@ -42,7 +42,7 @@ public class Grouping implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
-        if(player.hasPlayedBefore()) {
+        if(!player.hasPlayedBefore()) {
             MDatabase.setPlayerGroup(uuid, "none");
             MDatabase.setPlayerTag(uuid, "none");
             MDatabase.setPlayerInGroup(uuid, false);

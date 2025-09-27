@@ -13,6 +13,7 @@ import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -42,7 +43,7 @@ public class Invite extends CommandManager {
            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.cantFuckYourself", "&cYou cant invite yourself"))));
            return;
        }
-       if(Bukkit.getPlayer(sender.getName()) == null) {
+       if(Bukkit.getPlayer(args[0]) == null) {
            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.cantFind", "&cCant find this player"))));
            return;
        }
@@ -65,7 +66,7 @@ public class Invite extends CommandManager {
            });
        }).exceptionallyAsync(exp -> {
            sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.error", "&cAn error occurred, check if you are in a group")));
-           throw new RuntimeException(exp);
+           throw new RuntimeException(Arrays.toString(exp.getStackTrace()));
        });
     }
 }
