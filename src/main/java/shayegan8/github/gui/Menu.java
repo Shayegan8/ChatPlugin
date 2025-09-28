@@ -3,9 +3,12 @@ package shayegan8.github.gui;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import lombok.SneakyThrows;
+import me.devnatan.inventoryframework.RootView;
 import me.devnatan.inventoryframework.View;
 import me.devnatan.inventoryframework.ViewConfigBuilder;
 import me.devnatan.inventoryframework.context.RenderContext;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
@@ -14,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import shayegan8.github.ChatPlugin;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
 public class Menu extends View {
@@ -34,12 +38,14 @@ public class Menu extends View {
 
     @Override
     public void onInit(@NotNull ViewConfigBuilder config) {
-        config.title("ChatPlugin Menu").size(54);
+        Thread.ofVirtual().start(() -> config.title(Component.text(ChatPlugin.configuration_menu.getString("gui.menu.title.text", "ChatPlugin menu"))
+                .color(TextColor.fromCSSHexString(ChatPlugin.configuration_menu.getString("gui.menu.title.color", "#5f976b"))))
+                .size(ChatPlugin.configuration_menu.getInt("gui.menu.size", 54)));
     }
 
     @Override
     public void onFirstRender(@NotNull RenderContext render) {
-        ItemStack skuss = getSkull("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODI0NDJiYmY3MTcxYjVjYWZjYTIxN2M5YmE0NGNlMjc2NDcyMjVkZjc2Y2RhOTY4OWQ2MWE5ZjFjMGE1ZjE3NiJ9fX0");
+        ItemStack skuss = getSkull("");
         render.slot(23, skuss).onClick((click -> click.openForPlayer(PlayerList.class)));
         Thread.ofVirtual().start(() -> {
             ChatPlugin.configuration_menu.getConfigurationSection("gui.menu").getKeys(false).parallelStream().forEach(key -> {
@@ -47,6 +53,27 @@ public class Menu extends View {
                 String name = eachSection.getString("name");
                 int slot = eachSection.getInt("slot");
                 int amount = eachSection.getInt("amount");
+                if(eachSection.getString("id") != null) {
+                    String id = eachSection.getString("id");
+                    try {
+                        Class<?> idClass = Class.forName(id);
+                        if(!RootView.class.isAssignableFrom(idClass))
+                            return;
+                        @SuppressWarnings("unchecked")
+                        Class<? extends RootView> obtainedFConf = (Class<? extends RootView>) idClass.getDeclaredConstructor().newInstance().getClass();
+                        render.slot(slot, new ItemStack(Material.valueOf(name), amount)).onClick(click -> click.openForPlayer( obtainedFConf));
+                    } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    }
+                    render.slot(slot, new ItemStack(Material.valueOf(name), amount)).onClick(click -> click.openForPlayer(GMute.class));
+                    return;
+                }
+                if(name.equals("PLAYER_HEAD")) {
+                    ItemStack stork = getSkull(eachSection.getString("texture"));
+                    stork.setAmount(amount);
+                    render.slot(slot, stork);
+                    return;
+                }
                 render.slot(slot, new ItemStack(Material.valueOf(name), amount));
             });
         });

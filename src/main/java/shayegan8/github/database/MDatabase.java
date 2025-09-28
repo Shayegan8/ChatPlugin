@@ -124,6 +124,23 @@ public class MDatabase {
         });
     }
 
+    public static CompletableFuture<Boolean> playerHasGroup(UUID playerUUID) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerUUID = ?");
+                pState.setBytes(1, convertToBlob(playerUUID));
+                var has = false;
+                var query = pState.executeQuery();
+                while (query.next())
+                    has = true;
+                return has;
+            } catch (SQLException e) {
+                throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
+
+            }
+        });
+    }
+
     public static String getPlayerGroupBlocking(UUID playerUUID) {
         try {
             PreparedStatement pState = ChatPlugin.mDB.getConnection().prepareStatement("SELECT groupName FROM players WHERE playerUUID = ?");
