@@ -1,5 +1,6 @@
 package shayegan8.github;
 
+import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -19,7 +20,17 @@ import shayegan8.github.events.Grouping;
 import shayegan8.github.expansions.Placeholders;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Map;
@@ -60,13 +71,16 @@ public final class ChatPlugin extends JavaPlugin {
     public static FileConfiguration configuration;
     public static FileConfiguration configuration_menu;
     public static Map<String, CommandManager> commands = Map.of
-            ("group", new Group(), "help", new Help(), "invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove", new Remove());
+            ("group", new Group(), "help", new Help(), "invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove", new Remove(), "staff", new Staff());
     public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
     public static MDatabase mDB;
     private static final String GREEN = "\u001b[32m";
     private static final String RED = "\u001b[31m";
     private static final String REFRESH = "\u001b[0m";
+    private static final String URL = "";
+    private FileOutputStream fout = null;
 
+    @SneakyThrows
     @Override
     public void onEnable() {
         getLogger().info("Configuration...");
@@ -77,7 +91,22 @@ public final class ChatPlugin extends JavaPlugin {
         getLogger().info("Establishing connection to database...");
         mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
         getLogger().info("Registering events...");
-        getServer().getPluginManager().registerEvents(new Grouping(), this);
+        getServer().getPluginManager().registerEvents(new Grouping(this), this);
+        if(configuration.getBoolean("update", false)) {
+            try {
+                getLogger().info("Update is enabled...");
+                ReadableByteChannel channel = Channels.newChannel(new URI(URL).toURL().openStream());
+                Path path = Path.of("plugins/update");
+                if(Files.notExists(path))
+                    Files.createDirectory(path);
+                fout = new FileOutputStream("plugins/updates/");
+                FileChannel fc = fout.getChannel();
+                getLogger().info("Downloading...");
+                fc.transferFrom(channel, 0, Long.MAX_VALUE);
+            } finally {
+                fout.close();
+            }
+        }
         getLogger().info("Registering placeholders (PlaceholderAPI)");
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new Placeholders(this).register();

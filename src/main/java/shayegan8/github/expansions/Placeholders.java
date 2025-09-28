@@ -17,26 +17,18 @@ import java.util.concurrent.TimeUnit;
 public class Placeholders extends PlaceholderExpansion {
 
     private final Plugin plugin;
-    public Map<UUID, ObjectWithTime> cache_group = new ConcurrentHashMap<>();
-    public Map<UUID, ObjectWithTime> cache_tag = new ConcurrentHashMap<>();
+    public static Map<UUID, String> cache_group = new ConcurrentHashMap<>();
+    public static Map<UUID, String> cache_tag = new ConcurrentHashMap<>();
 
     public Placeholders(Plugin plugin) {
         this.plugin = plugin;
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-        scheduler.scheduleAtFixedRate(this::clean, 10, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::cleaner, 60, 60, TimeUnit.SECONDS);
     }
 
-    private void clean() {
-        for (UUID key : cache_group.keySet()) {
-            ObjectWithTime objT = cache_group.get(key);
-            if(objT != null && System.currentTimeMillis() - objT.time() >= 10000)
-                cache_group.remove(key);
-        }
-        for (UUID key : cache_tag.keySet()) {
-            ObjectWithTime objT = cache_tag.get(key);
-            if(objT != null && System.currentTimeMillis() - objT.time() >= 10000)
-                cache_tag.remove(key);
-        }
+    private void cleaner() {
+        cache_group.clear();
+        cache_tag.clear();
     }
 
     @Override
@@ -57,39 +49,38 @@ public class Placeholders extends PlaceholderExpansion {
     @SneakyThrows
     @Override
     public String onPlaceholderRequest(Player player, @NotNull String parms) {
+        UUID uuid = player.getUniqueId();
         if(parms.equalsIgnoreCase("group")) {
-            updateGroup(player.getUniqueId());
-            return getGroup(player.getUniqueId());
+            if(cache_group.get(uuid) == null)
+                updateGroup(uuid);
+            return getGroup(uuid);
         } else if(parms.equalsIgnoreCase("tag")) {
-            updateTag(player.getUniqueId());
-            return getTag(player.getUniqueId());
+            if(cache_tag.get(uuid) == null)
+                updateTag(uuid);
+            return getTag(uuid);
         }
         return null;
     }
 
     private String getGroup(UUID uuid) {
-        ObjectWithTime objT = cache_group.get(uuid);
-        if(objT == null)
-            return null;
-        return objT.result();
+        return cache_group.getOrDefault(uuid, "loading");
     }
 
     private String getTag(UUID uuid) {
-        ObjectWithTime objT = cache_tag.get(uuid);
-        if(objT == null)
-            return null;
-        return objT.result();
+        return cache_tag.getOrDefault(uuid, "loading");
     }
 
-    private void updateGroup(UUID uuid) {
+    public static void updateGroup(UUID uuid) {
         MDatabase.getPlayerGroup(uuid).thenAccept(group -> {
-            Thread.ofVirtual().start(() -> cache_group.put(uuid, new ObjectWithTime(group, System.currentTimeMillis())));
+            cache_tag.remove(uuid);
+            cache_group.put(uuid, group);
         });
     }
 
-    private void updateTag(UUID uuid) {
+    public static void updateTag(UUID uuid) {
         MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
-            Thread.ofVirtual().start(() -> cache_tag.put(uuid, new ObjectWithTime(tag, System.currentTimeMillis())));
+            cache_tag.remove(uuid);
+            cache_tag.put(uuid, tag);
         });
     }
 }

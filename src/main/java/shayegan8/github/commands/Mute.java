@@ -7,6 +7,7 @@ import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -59,7 +60,7 @@ public class Mute extends CommandManager {
             }
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.mute.error", "&cAn error occurred")));
-            throw new RuntimeException(exp);
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });
     }
 }

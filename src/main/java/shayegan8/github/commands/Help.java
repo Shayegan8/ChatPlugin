@@ -26,7 +26,7 @@ public class Help extends CommandManager {
             });
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.help.error", "&cAn error occurred")));
-            throw new RuntimeException(Arrays.toString(exp.getStackTrace()));
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });
     }
 }

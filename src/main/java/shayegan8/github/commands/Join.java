@@ -6,6 +6,7 @@ import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 public class Join extends CommandManager {
@@ -41,7 +42,7 @@ public class Join extends CommandManager {
             }
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.join.error", "&cAn error occurred")));
-            throw new RuntimeException(exp);
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });;
     }
 }

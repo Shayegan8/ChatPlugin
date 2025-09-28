@@ -66,7 +66,7 @@ public class Invite extends CommandManager {
            });
        }).exceptionallyAsync(exp -> {
            sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.error", "&cAn error occurred, check if you are in a group")));
-           throw new RuntimeException(Arrays.toString(exp.getStackTrace()));
+           throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
        });
     }
 }

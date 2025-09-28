@@ -7,6 +7,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 
@@ -23,7 +24,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
     private CooldownManager cooldownManager;
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if(args.length == 0) {
             Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C((Player)sender, (String) ChatPlugin.configuration
                     .get("chatp.usage", "&c/chatp help to get instruction for all commands"))));
@@ -56,7 +57,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         String firstArgument = args[0];
         return switch (firstArgument) {
             case "group" -> switch (args.length) { //chatp group create name

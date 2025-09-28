@@ -1,15 +1,13 @@
 package shayegan8.github.commands;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
+import java.util.Arrays;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
 
 public class Quit extends CommandManager {
 
@@ -18,12 +16,10 @@ public class Quit extends CommandManager {
         return "&e/chatp reload";
     }
 
-
     @Override
     public String getPermission() {
         return "chatp.base.quit";
     }
-
 
     @Override
     public void execute(CommandSender sender, String[] args) {
@@ -48,7 +44,7 @@ public class Quit extends CommandManager {
             }
         }).exceptionallyAsync(exp -> {
             sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.quit.error", "&cAn error occurred")));
-            throw new RuntimeException(exp);
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });
     }
 }
