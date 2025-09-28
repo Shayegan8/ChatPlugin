@@ -1,6 +1,7 @@
 package shayegan8.github;
 
 import lombok.SneakyThrows;
+import me.devnatan.inventoryframework.ViewFrame;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -18,14 +19,13 @@ import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
 import shayegan8.github.expansions.Placeholders;
+import shayegan8.github.gui.GMute;
+import shayegan8.github.gui.Menu;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -107,6 +107,8 @@ public final class ChatPlugin extends JavaPlugin {
                 fout.close();
             }
         }
+        getLogger().info("Registering guis...");
+        ViewFrame frame = ViewFrame.create(this).with(new GMute(), new Menu());
         getLogger().info("Registering placeholders (PlaceholderAPI)");
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new Placeholders(this).register();
