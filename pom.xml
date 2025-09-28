@@ -39,12 +39,26 @@
 
     <repositories>
         <repository>
+            <id>central</id>
+            <name>Maven Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>sonatype-snapshots</id>
+            <name>Sonatype OSS Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+        <repository>
             <id>spigotmc-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/releases/</url>
+        </repository>
+        <repository>
+            <id>minecraft-repo</id>
+            <url>https://libraries.minecraft.net/</url>
         </repository>
     </repositories>
 
@@ -84,8 +98,14 @@
         </dependency>
         <dependency>
             <groupId>me.devnatan</groupId>
-            <artifactId>inventory-framework-api</artifactId>
+            <artifactId>inventory-framework-platform-bukkit</artifactId>
             <version>3.5.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mojang</groupId>
+            <artifactId>authlib</artifactId>
+            <version>6.0.58</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
