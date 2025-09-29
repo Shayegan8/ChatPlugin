@@ -23,15 +23,15 @@ public class Staff extends CommandManager {
 
     private void console(CommandSender sender, String[] args) {
         if(args.length != 1) {
-            ChatPlugin.sendBMSG(sender, "chatp.staff.usageConsole", getUsage());
+            ChatPlugin.sendBMSG(sender, "chatp.staff.usage", getUsage());
             return;
         }
         if(Bukkit.getPlayer(args[0]) == null) {
-            ChatPlugin.sendBMSG(sender, "chatp.staff.cantFindConsole", "&cCant find this player");
+            ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
             return;
         }
         UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
-        ChatPlugin.sendBMSG(sender, "chatp.staff.promotedConsole", "&aPromoted");
+        ChatPlugin.sendBMSG(sender, "chatp.staff.promoted", "&aPromoted");
         MDatabase.setPlayerTag(argUUID, "staff");
     }
 

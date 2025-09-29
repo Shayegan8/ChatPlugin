@@ -9,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
@@ -21,8 +20,6 @@ import java.util.concurrent.CompletableFuture;
 
 @AllArgsConstructor
 public class Grouping implements Listener {
-
-    private final Plugin plugin;
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent e) {
@@ -38,9 +35,7 @@ public class Grouping implements Listener {
                 }
                 return null;
             }).thenAccept((m) -> {
-                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-                    eachPlayer.sendMessage(m);
-                });
+                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> eachPlayer.sendMessage(m));
                 ChatPlugin.getInstance().getLogger().info(msg);
             }).exceptionally((exp) -> {
                 throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
@@ -59,9 +54,7 @@ public class Grouping implements Listener {
             return CompletableFuture.completedFuture(null);
         }).thenAccept(result -> {
             if(result != null)
-                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-                    player.sendMessage(result);
-                });
+                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> player.sendMessage(result));
         });
     }
 
@@ -69,23 +62,21 @@ public class Grouping implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
-        if(!player.hasPlayedBefore()) {
-            MDatabase.setPlayerGroup(uuid, "none");
-            MDatabase.setPlayerTag(uuid, "none");
-            MDatabase.setPlayerInGroup(uuid, false);
-        }
-        MDatabase.getPlayerGroup(uuid).thenAccept(group -> {
-            Thread.ofVirtual().start(() -> {Placeholders.cache_group.put(uuid, group);});
+        MDatabase.playerHasGroup(uuid).thenAccept(has -> {
+           if(!has)
+               return;
+           MDatabase.setPlayerGroup(uuid, "none");
+           MDatabase.setPlayerTag(uuid, "none");
+           MDatabase.setPlayerInGroup(uuid, false);
         });
-        MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
-            Thread.ofVirtual().start(() -> {Placeholders.cache_tag.put(uuid, tag);});
-        });
+        MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> Placeholders.cache_group.put(uuid, group)));
+        MDatabase.getPlayerTag(uuid).thenAccept(tag -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),() -> Placeholders.cache_tag.put(uuid, tag)));
     }
 
     @EventHandler
     public void onLeft(PlayerQuitEvent e) {
         UUID uuid = e.getPlayer().getUniqueId();
-        Thread.ofVirtual().start(() -> {Placeholders.cache_group.remove(uuid);});
-        Thread.ofVirtual().start(() -> {Placeholders.cache_tag.remove(uuid);});
+        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> Placeholders.cache_group.remove(uuid));
+        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> Placeholders.cache_tag.remove(uuid));
     }
 }

@@ -75,7 +75,7 @@ public final class ChatPlugin extends JavaPlugin {
     public static FileConfiguration configuration;
     public static FileConfiguration configuration_menu;
     public static Map<String, CommandManager> commands = Map.of
-            ("group", new Group(), "help", new Help(), "invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove", new Remove(), "staff", new Staff());
+            ("group", new Group(), "help", new Help(), "invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove", new Remove(), "staff", new Staff(), "menu", new CMenu());
     public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
     public static MDatabase mDB;
     private static final String GREEN = "\u001b[32m";
@@ -118,7 +118,7 @@ public final class ChatPlugin extends JavaPlugin {
         getLogger().info("Establishing connection to database...");
         mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
         getLogger().info("Registering events...");
-        getServer().getPluginManager().registerEvents(new Grouping(this), this);
+        getServer().getPluginManager().registerEvents(new Grouping(), this);
         if(configuration.getBoolean("update", false)) {
             try {
                 getLogger().info("Update is enabled...");

@@ -56,15 +56,6 @@ chatp:
     joinMSG: "%player_name% Invited you to %group_name%\n&eClick this messaage to join"
     error: "&cAn error occurred"
   group:
-    helpConsole:
-      - "&cPlayer help &8- &e&lGroup"
-      - "&r"
-      - "&c- &e/chatp group delete {groupName}"
-      - "&c- &e/chatp group help"
-      - "&c- &e/chatp group create {groupName}"
-      - "&c- &e/chatp group"
-      - "&r"
-      - "&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin"
     help:
       - "&cPlayer help &8- &e&lGroup"
       - "&r"
@@ -74,9 +65,12 @@ chatp:
       - "&c- &e/chatp group"
       - "&r"
       - "&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin"
-    usageConsole: "&e/chatp group help,create,delete"
-    createdGroup: "&eGroup created"
-    deletedGroup: "&eGroup deleted"
     created: "&e%chatp_group% &ahas been created"
     deleted: "&e%chatp_group% &chas been deleted"
     usage: "&e/chatp group help,create,delete"
+  staff:
+    usage: "&e/chatp staff {playerName}"
+    cantFind: "&cCant find this player"
+    cantFuckYourself: "&cYou are admin ;|"
+    cantFuckIt: "&cYou should be admin"
+    promoted: "&e%player_name% &aSuccessfully promoted"

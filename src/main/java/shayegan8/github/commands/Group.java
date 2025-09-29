@@ -28,15 +28,15 @@ public class Group extends CommandManager {
             switch (args[0]) {
                 case "create":
                     MDatabase.createGroup(args[1]);
-                    ChatPlugin.sendBMSG(sender, "chatp.group.createdConsole", "&eGroup created");
+                    ChatPlugin.sendBMSG(sender, "chatp.group.created", "&eGroup created");
                     break;
                 case "delete":
                     MDatabase.deleteGroup(args[1]);
-                    ChatPlugin.sendBMSG(sender, "chatp.group.deletedConsole", "&eGroup deleted");
+                    ChatPlugin.sendBMSG(sender, "chatp.group.deleted", "&eGroup deleted");
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.list"))
+            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help"))
                     .thenAccept(ls -> ls.forEach(str -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.B(str)))))
                     .exceptionallyAsync(exp -> {
                 throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
@@ -88,7 +88,7 @@ public class Group extends CommandManager {
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.list")).thenAccept(ls -> {
+            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help")).thenAccept(ls -> {
                 ls.forEach(str -> {
                     Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.C(player, str)));
                 });
