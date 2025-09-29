@@ -57,12 +57,14 @@ public class Invite extends CommandManager {
            return MDatabase.getPlayerGroup(senderUUID);
        }).thenAccept(group -> {
            MDatabase.setPlayerInvited(argUUID, true);
-           Bukkit.getScheduler().runTaskAsynchronously(ChatPlugin.getInstance(), () -> {
-               TextComponent msg = new TextComponent(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.joinMSG", "%player_name% Invited you to %group_name%\n&eClick this messaage to join")));
-               msg.setColor(ChatColor.RED);
-               msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + group));
-               msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.bar", "&eClick this to join to the group"))).create()));
-               sender.spigot().sendMessage(msg);
+           CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getString("chatp.invite.joinMSG", "%player_name% Invited you to %group_name%\n&eClick this messaage to join")).thenAccept((joinMSG) -> {
+               Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                   TextComponent msg = new TextComponent(ColorUtils.C(player, joinMSG));
+                   msg.setColor(ChatColor.RED);
+                   msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + group));
+                   msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.bar", "&eClick this to join to the group"))).create()));
+                   sender.spigot().sendMessage(msg);
+               });
            });
        }).exceptionallyAsync(exp -> {
            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));

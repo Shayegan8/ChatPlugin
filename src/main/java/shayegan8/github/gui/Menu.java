@@ -8,20 +8,19 @@ import net.kyori.adventure.text.format.TextColor;
 import org.jetbrains.annotations.NotNull;
 import shayegan8.github.ChatPlugin;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Menu extends View {
 
+    public static final Map<Integer, Object> cMap = new ConcurrentHashMap<>();
+
     @Override
     public void onInit(@NotNull ViewConfigBuilder config) {
-        try(ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-            config.title(Component.text(ChatPlugin.configuration_menu.getString("gui.menu.title.text", "ChatPlugin menu"))
-                .color(TextColor.fromCSSHexString(ChatPlugin.configuration_menu.getString("gui.menu.title.color", "#5f976b"))))
+        config.title(Component.text(ChatPlugin.configuration_menu.getString("gui.menu.title.text", "ChatPlugin menu"))
+                        .color(TextColor.fromCSSHexString(ChatPlugin.configuration_menu.getString("gui.menu.title.color", "#5f976b"))))
                 .size(ChatPlugin.configuration_menu.getInt("gui.menu.size", 54));
-            config.layout(ChatPlugin.configuration_menu.getStringList("gui.menu.layout").toArray(new String[0]));
-        }
+        config.layout(ChatPlugin.configuration_menu.getStringList("gui.menu.layout").toArray(new String[0]));
     }
 
     @Override

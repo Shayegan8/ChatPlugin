@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import lombok.SneakyThrows;
 import me.devnatan.inventoryframework.context.RenderContext;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -60,27 +61,29 @@ public class GuiFunc {
         render.layoutSlot(shape, (amount_, builder) -> {
             switch (shape) {
                 case '1', '2', '3':
-                    builder.withItem(item);
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> builder.withItem(item));
                     break;
                 case 'a':
-                    builder.withItem(item).onClick(click -> click.openForPlayer(GInvite.class));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () ->builder.withItem(item).onClick(click -> click.openForPlayer(GInvite.class)));
                     break;
                 case 'b':
-                    builder.withItem(item).onClick(click -> click.openForPlayer(GGroup.class));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () ->builder.withItem(item).onClick(click -> click.openForPlayer(GGroup.class)));
                     break;
                 case 'c':
-                    builder.withItem(item).onClick(click -> click.openForPlayer(GDelete.class));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () ->builder.withItem(item).onClick(click -> click.openForPlayer(GDelete.class)));
                     break;
                 case 'd':
-                    builder.withItem(item).onClick(click -> click.openForPlayer(GMute.class));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () ->builder.withItem(item).onClick(click -> click.openForPlayer(GMute.class)));
                     break;
                 case 'e':
-                    builder.withItem(item).onClick(click -> click.openForPlayer(GHelp.class));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () ->builder.withItem(item).onClick(click -> click.openForPlayer(GHelp.class)));
                     break;
                 case 'f':
-                    builder.withItem(item).onClick(click -> {
-                        click.closeForPlayer();
-                        player.performCommand("chatp help");
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                        builder.withItem(item).onClick(click -> {
+                            click.closeForPlayer();
+                            player.performCommand("chatp help");
+                        });
                     });
                     break;
                 }
