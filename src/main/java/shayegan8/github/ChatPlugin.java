@@ -84,6 +84,7 @@ public final class ChatPlugin extends JavaPlugin {
     private static final String URL = "";
     private FileOutputStream fout = null;
     private static ChatPlugin plugin;
+    public ViewFrame frame = ViewFrame.create(this).with(new GMute(), new Menu());
 
     public static void sendBMSG(CommandSender sender, String path, String msg) {
         CompletableFuture.supplyAsync(() -> ColorUtils.B(ChatPlugin.configuration.getString(path, msg))).thenAccept(result -> {
@@ -134,7 +135,7 @@ public final class ChatPlugin extends JavaPlugin {
             }
         }
         getLogger().info("Registering guis...");
-        ViewFrame frame = ViewFrame.create(this).with(new GMute(), new Menu());
+        frame.register();
         getLogger().info("Registering placeholders (PlaceholderAPI)");
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new Placeholders(this).register();
