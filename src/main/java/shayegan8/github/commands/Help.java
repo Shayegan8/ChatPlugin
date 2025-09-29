@@ -1,5 +1,6 @@
 package shayegan8.github.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
@@ -17,15 +18,14 @@ public class Help extends CommandManager {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        CompletableFuture.runAsync(() -> {
-            ChatPlugin.configuration.getStringList("chatp.help.list").forEach(str -> {
+        CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.help.list")).thenAccept(ls -> {
+            ls.forEach(str -> {
                 if(sender instanceof Player player)
-                    sender.sendMessage(ColorUtils.C(player, str));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.C(player, str)));
                 else
-                    sender.sendMessage(ColorUtils.B(str));
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.B(str)));
             });
         }).exceptionallyAsync(exp -> {
-            sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.help.error", "&cAn error occurred")));
             throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });
     }

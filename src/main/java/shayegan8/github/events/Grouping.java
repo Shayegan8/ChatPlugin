@@ -1,6 +1,7 @@
 package shayegan8.github.events;
 
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +15,7 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.expansions.Placeholders;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -36,26 +38,30 @@ public class Grouping implements Listener {
                 }
                 return null;
             }).thenAccept((m) -> {
-                eachPlayer.sendMessage(m);
-                ChatPlugin.getPlugin(ChatPlugin.class).getLogger().info(msg);
+                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                    eachPlayer.sendMessage(m);
+                });
+                ChatPlugin.getInstance().getLogger().info(msg);
             }).exceptionally((exp) -> {
-                exp.printStackTrace();
-                return null;
+                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
             });
         });
     }
 
+    @SneakyThrows
     @EventHandler
     public void onChat_(AsyncPlayerChatEvent e) {
         Player player = e.getPlayer();
         UUID uuid = e.getPlayer().getUniqueId();
-        MDatabase.isPlayerMuted(uuid).thenAccept(condition -> {
-            if(!condition)
-                return;
-            Thread.ofVirtual().start(() -> {
-                player.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("cantMSG", "You are muted")));
-            });
-            e.setCancelled(true);
+        MDatabase.isPlayerMuted(uuid).thenComposeAsync(condition -> {
+            if(condition)
+                return CompletableFuture.completedFuture(ColorUtils.C(player, ChatPlugin.configuration.getString("cantMSG", "You are muted")));
+            return CompletableFuture.completedFuture(null);
+        }).thenAccept(result -> {
+            if(result != null)
+                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                    player.sendMessage(result);
+                });
         });
     }
 

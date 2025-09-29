@@ -32,32 +32,32 @@ public class Invite extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
        if (!(sender instanceof Player player)) {
-           Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.invite.notPlayer", "&cYou should be a player"))));
+           ChatPlugin.sendBMSG(sender, "chatp.invited.notPlayer", "&cYou should be a player");
            return;
        }
        if (args.length != 1) {
-           Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.usage", getUsage()))));
+           ChatPlugin.sendCMSG(player, "chatp.invited.usage", getUsage());
            return;
        }
        if(sender.getName().equalsIgnoreCase(args[0])) {
-           Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.cantFuckYourself", "&cYou cant invite yourself"))));
+           ChatPlugin.sendCMSG(player, "chatp.invited.cantFuckYourself", "&cYou cant invite yourself");
            return;
        }
        if(Bukkit.getPlayer(args[0]) == null) {
-           Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.cantFind", "&cCant find this player"))));
+           ChatPlugin.sendCMSG(player, "chatp.invite.cantFind", "&cCant find this player");
            return;
        }
        UUID senderUUID = player.getUniqueId();
        UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
        MDatabase.getPlayerTag(senderUUID).thenCompose(tag -> {
            if(!tag.equalsIgnoreCase("admin") && !tag.equalsIgnoreCase("staff")) {
-               Thread.ofVirtual().start(() -> sender.sendMessage("chatp.invite.cant", "&cYou need to be admin or staff to invite"));
+               ChatPlugin.sendCMSG(player, "chatp.invite.cant", "&cYou need to be admin or staff to invite");
                return CompletableFuture.completedFuture(null);
            }
            return MDatabase.getPlayerGroup(senderUUID);
        }).thenAccept(group -> {
            MDatabase.setPlayerInvited(argUUID, true);
-           Thread.ofVirtual().start(() -> {
+           Bukkit.getScheduler().runTaskAsynchronously(ChatPlugin.getInstance(), () -> {
                TextComponent msg = new TextComponent(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.joinMSG", "%player_name% Invited you to %group_name%\n&eClick this messaage to join")));
                msg.setColor(ChatColor.RED);
                msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + group));
@@ -65,7 +65,6 @@ public class Invite extends CommandManager {
                sender.spigot().sendMessage(msg);
            });
        }).exceptionallyAsync(exp -> {
-           sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.invite.error", "&cAn error occurred, check if you are in a group")));
            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
        });
     }

@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
-import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.Arrays;
@@ -26,15 +25,15 @@ public class Remove extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if(!(sender instanceof Player player)) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.remove.notPlayer", "&cYou should be a player"))));
+            ChatPlugin.sendBMSG(sender, "chatp.remove.notPlayer", "&cYou should be a player");
             return;
         }
         if(args.length != 1) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(getUsage()));
+            ChatPlugin.sendCMSG(player, "chatp.remove.usage", getUsage());
             return;
         }
         if(Bukkit.getPlayer(args[0]) == null) {
-            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.notFound", "&cCant find this player :("))));
+            ChatPlugin.sendCMSG(player, "chatp.remove.notFound", "&cCant find this player :(");
             return;
         }
         UUID senderUUID = player.getUniqueId();
@@ -42,27 +41,27 @@ public class Remove extends CommandManager {
 
         MDatabase.getPlayerGroup(senderUUID).thenCombine(MDatabase.getPlayerGroup(argUUID), String::equals).thenCompose(bothInSameGroup -> {
             if(!bothInSameGroup) {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.notSame", "&cYour group and the requested player's group its not the same"))));
+                ChatPlugin.sendCMSG(player, "chatp.remove.notSame", "&cYour group and the requested player's group its not the same");
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.isPlayerInGroup(senderUUID).thenCombine(MDatabase.isPlayerInGroup(Bukkit.getPlayer(argUUID).getUniqueId()), (player1, player2) -> player1 && player2);
         }).thenCompose(bothAreInGroup -> {
             if(!bothAreInGroup) {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.both", "&cboth players are not in group"))));
+                ChatPlugin.sendCMSG(player, "chatp.remove.both", "&cboth players are not in group");
                 return CompletableFuture.completedFuture(null);
             }
             return MDatabase.getPlayerTag(senderUUID);
         }).thenAccept(tag -> {
             if (tag.equals("admin") || tag.equals("staff")) {
-                MDatabase.setPlayerGroup(argUUID, "none");
-                MDatabase.setPlayerTag(argUUID, "none");
-                MDatabase.setPlayerInGroup(argUUID, false);
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.removed", "%player_name% &asuccessfully removed"))));
-            } else {
-                Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.cant", "&cYou are not admin or staff"))));
-            }
+                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                    MDatabase.setPlayerGroup(argUUID, "none");
+                    MDatabase.setPlayerTag(argUUID, "none");
+                    MDatabase.setPlayerInGroup(argUUID, false);
+                });
+                ChatPlugin.sendCMSG(player, "chatp.remove.removed", "%player_name% &asuccessfully removed");
+            } else
+                ChatPlugin.sendCMSG(player, "chatp.remove.cant", "&cYou are not admin or staff");
         }).exceptionallyAsync(exp -> {
-            sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.remove.error", "&cAn error occurred")));
             throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });
     }

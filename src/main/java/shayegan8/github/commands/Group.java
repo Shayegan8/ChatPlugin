@@ -7,6 +7,7 @@ import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -27,21 +28,21 @@ public class Group extends CommandManager {
             switch (args[0]) {
                 case "create":
                     MDatabase.createGroup(args[1]);
-                    Thread.ofVirtual().start(() -> ChatPlugin.getPlugin(ChatPlugin.class).getLogger().info(ColorUtils.B(ChatPlugin.configuration.getString("chatp.group.createdConsole", "&eGroup created"))));
+                    ChatPlugin.sendBMSG(sender, "chatp.group.createdConsole", "&eGroup created");
                     break;
                 case "delete":
                     MDatabase.deleteGroup(args[1]);
-                    Thread.ofVirtual().start(() -> ChatPlugin.getPlugin(ChatPlugin.class).getLogger().info(ColorUtils.B(ChatPlugin.configuration.getString("chatp.group.deletedConsole", "&eGroup deleted"))));
+                    ChatPlugin.sendBMSG(sender, "chatp.group.deletedConsole", "&eGroup deleted");
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            Thread.ofVirtual().start(() -> {
-                ChatPlugin.configuration.getStringList("chatp.group.helpConsole").forEach(each -> {
-                    sender.sendMessage(ColorUtils.B(each));
-                });
+            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.list"))
+                    .thenAccept(ls -> ls.forEach(str -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.B(str)))))
+                    .exceptionallyAsync(exp -> {
+                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
             });
         } else
-            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.B(ChatPlugin.configuration.getString("chatp.group.usageConsole" , getUsage()))));
+            ChatPlugin.sendBMSG(sender, "chatp.group.usage", getUsage());
     }
 
     private void player(CommandSender sender, String[] args) {
@@ -52,41 +53,47 @@ public class Group extends CommandManager {
                 case "create":
                     MDatabase.isPlayerInGroup(uuid).thenAccept((check) -> {
                         if(check) {
-                            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.cantCreate", "&cYou are already in a group"))));
+                            ChatPlugin.sendCMSG(player,"chatp.group.cantCreate", "&cYou are already in a group");
                             return;
                         }
-                        MDatabase.createGroup(args[1]);
-                        MDatabase.setPlayerInGroup(uuid, true);
-                        MDatabase.setPlayerTag(uuid, "admin");
-                        MDatabase.setPlayerGroup(uuid, args[1]);
-                        Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.created", "&e%chatp_group% &ahas been created"))));
+                        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                            MDatabase.createGroup(args[1]);
+                            MDatabase.setPlayerInGroup(uuid, true);
+                            MDatabase.setPlayerTag(uuid, "admin");
+                            MDatabase.setPlayerGroup(uuid, args[1]);
+                        });
+                        ChatPlugin.sendCMSG(player,"chatp.group.created", "&e%chatp_group% &ahas been created");
                     });
                     break;
                 case "delete":
-                    Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.deleted", "&e%chatp_group% &chas been deleted"))));
+                    ChatPlugin.sendCMSG(player,"chatp.group.deleted", "&e%chatp_group% &chas been deleted");
                     MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
                         if(!check) {
-                            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.notIn", "&eYou are not in group"))));
+                            ChatPlugin.sendCMSG(player,"chatp.group.notIn", "&eYou are not in group");
                             return CompletableFuture.completedFuture(null);
                         }
                         return MDatabase.getPlayerTag(uuid);
                     }).thenAccept((tag) -> {
                         if(!tag.equalsIgnoreCase("admin")) {
-                            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.admin", "&eYou are not admin"))));
+                            ChatPlugin.sendCMSG(player,"chatp.group.admin", "&eYou are not admin");
                             return;
                         }
-                        MDatabase.deleteGroup(args[1]);
-                        MDatabase.setPlayerInGroup(uuid, false);
-                        MDatabase.setPlayerTag(uuid, "none");
-                        MDatabase.setPlayerGroup(uuid, "none");
+                        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                            MDatabase.deleteGroup(args[1]);
+                            MDatabase.setPlayerInGroup(uuid, false);
+                            MDatabase.setPlayerTag(uuid, "none");
+                            MDatabase.setPlayerGroup(uuid, "none");
+                        });
                     });
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            Thread.ofVirtual().start(() -> {
-                ChatPlugin.configuration.getStringList("chatp.group.help").forEach(each -> {
-                    sender.sendMessage(ColorUtils.C(player, each));
+            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.list")).thenAccept(ls -> {
+                ls.forEach(str -> {
+                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.C(player, str)));
                 });
+            }).exceptionallyAsync(exp -> {
+                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
             });
         } else
             Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.usage" , getUsage()))));

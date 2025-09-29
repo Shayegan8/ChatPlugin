@@ -3,9 +3,11 @@ package shayegan8.github;
 import lombok.SneakyThrows;
 import me.devnatan.inventoryframework.ViewFrame;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.annotation.command.Command;
@@ -33,7 +35,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
 @Description("Simple chat plugin :O")
@@ -79,10 +83,32 @@ public final class ChatPlugin extends JavaPlugin {
     private static final String REFRESH = "\u001b[0m";
     private static final String URL = "";
     private FileOutputStream fout = null;
+    private static ChatPlugin plugin;
+
+    public static void sendBMSG(CommandSender sender, String path, String msg) {
+        CompletableFuture.supplyAsync(() -> ColorUtils.B(ChatPlugin.configuration.getString(path, msg))).thenAccept(result -> {
+            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(result));
+        }).exceptionallyAsync(exp -> {
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+        });
+    }
+
+    public static void sendCMSG(Player player, String path, String msg) {
+        CompletableFuture.supplyAsync(() -> ColorUtils.C(player, ChatPlugin.configuration.getString(path, msg))).thenAccept(result -> {
+            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> player.sendMessage(result));
+        }).exceptionallyAsync(exp -> {
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+        });
+    }
+
+    public static ChatPlugin getInstance() {
+        return plugin;
+    }
 
     @SneakyThrows
     @Override
     public void onEnable() {
+        plugin = this;
         getLogger().info("Configuration...");
         createConfig();
         getLogger().info("Registering commands...");

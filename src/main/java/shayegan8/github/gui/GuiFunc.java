@@ -17,6 +17,8 @@ import shayegan8.github.ColorUtils;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class GuiFunc {
@@ -35,55 +37,63 @@ public class GuiFunc {
         return skuss;
     }
 
-    public static void renderer(@NotNull RenderContext render, String path) {
-        Thread.ofVirtual().start(() -> {
-            ChatPlugin.configuration_menu.getConfigurationSection(path).getKeys(false).parallelStream().forEach(eachSection -> {
-                if(eachSection.equalsIgnoreCase("layout") || eachSection.equalsIgnoreCase("size") || eachSection.equalsIgnoreCase("title"))
-                    return;
-                ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(eachSection);
-                Player player = render.getPlayer();
-                char shape = section.getString("shape").charAt(0);
-                String name = section.getString("name");
-                int amount = section.getInt("amount");
-                ItemStack item = new ItemStack(Material.valueOf(name), amount);
-                ItemMeta meta = item.getItemMeta();
-                String text = ColorUtils.C(player, section.getString("text"));
-                List<String> lore = section.getStringList("list").stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList());
-                if(lore != null)
-                    meta.setLore(lore);
-                if(text != null)
-                    meta.setDisplayName(text);
-                item.setItemMeta(meta);
-                render.layoutSlot(shape, (amount_, builder) -> {
-                    if(shape == '1' || shape == '2' || shape == '3')
-                        builder.withItem(item);
-                    else {
-                        switch (shape) {
-                            case 'a':
-                                builder.withItem(item).onClick(click -> click.openForPlayer(GInvite.class));
-                                break;
-                            case 'b':
-                                builder.withItem(item).onClick(click -> click.openForPlayer(GGroup.class));
-                                break;
-                            case 'c':
-                                builder.withItem(item).onClick(click -> click.openForPlayer(GDelete.class));
-                                break;
-                            case 'd':
-                                builder.withItem(item).onClick(click -> click.openForPlayer(GMute.class));
-                                break;
-                            case 'e':
-                                builder.withItem(item).onClick(click -> click.openForPlayer(GHelp.class));
-                                break;
-                            case 'f':
-                                builder.withItem(item).onClick(click -> {
-                                    click.closeForPlayer();
-                                    player.performCommand("chatp help");
-                                });
-                                break;
-                        }
-                    }
-                });
-            });
-        });    }
+    private static ItemStack itemCreation(Player player, ConfigurationSection section, String name, int amount) {
+        ItemStack item = new ItemStack(Material.valueOf(name), amount);
+        ItemMeta meta = item.getItemMeta();
+        String text = ColorUtils.C(player, section.getString("text"));
+        List<String> lore = section.getStringList("list").stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList());
+        if(lore != null)
+            meta.setLore(lore);
+        if(text != null)
+            meta.setDisplayName(text);
+        item.setItemMeta(meta);
+        return item;
+    }
 
+    private static void rendering(RenderContext render, String eachSection) {
+        ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(eachSection);
+        Player player = render.getPlayer();
+        char shape = section.getString("shape").charAt(0);
+        String name = section.getString("name");
+        int amount = section.getInt("amount");
+        ItemStack item = itemCreation(player, section, name, amount);
+        render.layoutSlot(shape, (amount_, builder) -> {
+            switch (shape) {
+                case '1', '2', '3':
+                    builder.withItem(item);
+                    break;
+                case 'a':
+                    builder.withItem(item).onClick(click -> click.openForPlayer(GInvite.class));
+                    break;
+                case 'b':
+                    builder.withItem(item).onClick(click -> click.openForPlayer(GGroup.class));
+                    break;
+                case 'c':
+                    builder.withItem(item).onClick(click -> click.openForPlayer(GDelete.class));
+                    break;
+                case 'd':
+                    builder.withItem(item).onClick(click -> click.openForPlayer(GMute.class));
+                    break;
+                case 'e':
+                    builder.withItem(item).onClick(click -> click.openForPlayer(GHelp.class));
+                    break;
+                case 'f':
+                    builder.withItem(item).onClick(click -> {
+                        click.closeForPlayer();
+                        player.performCommand("chatp help");
+                    });
+                    break;
+                }
+        });
+    }
+
+    public static void rendererMenu(@NotNull RenderContext render, String path) {
+        try(ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            executorService.submit(() -> {
+                ChatPlugin.configuration_menu.getConfigurationSection(path).getKeys(false).stream()
+                        .filter(eachSection -> !eachSection.equalsIgnoreCase("layout") && !eachSection.equalsIgnoreCase("size") && !eachSection.equalsIgnoreCase("title"))
+                        .forEach(eachSection -> rendering(render, eachSection));
+            });
+        }
+    }
 }
