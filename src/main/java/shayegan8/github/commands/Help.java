@@ -19,7 +19,7 @@ public class Help extends CommandManager {
     @Override
     public void execute(CommandSender sender, String[] args) {
         CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.help.list")).thenAccept(ls -> {
-            ls.forEach(str -> {
+            ls.forEach(str -> { 
                 if(sender instanceof Player player)
                     Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.C(player, str)));
                 else

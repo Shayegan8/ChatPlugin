@@ -66,25 +66,31 @@ public class Group extends CommandManager {
                     });
                     break;
                 case "delete":
-                    ChatPlugin.sendCMSG(player,"chatp.group.deleted", "&e%chatp_group% &chas been deleted");
-                    MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
-                        if(!check) {
-                            ChatPlugin.sendCMSG(player,"chatp.group.notIn", "&eYou are not in group");
-                            return CompletableFuture.completedFuture(null);
-                        }
-                        return MDatabase.getPlayerTag(uuid);
-                    }).thenAccept((tag) -> {
-                        if(!tag.equalsIgnoreCase("admin")) {
-                            ChatPlugin.sendCMSG(player,"chatp.group.admin", "&eYou are not admin");
-                            return;
-                        }
-                        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-                            MDatabase.deleteGroup(args[1]);
-                            MDatabase.setPlayerInGroup(uuid, false);
-                            MDatabase.setPlayerTag(uuid, "none");
-                            MDatabase.setPlayerGroup(uuid, "none");
+                	MDatabase.isGroupExist(args[1]).thenAccept(check -> {
+                		if(!check)
+                			return;
+                		ChatPlugin.sendCMSG(player,"chatp.group.deleted", "&e%chatp_group% &chas been deleted");
+                	}).thenAccept(kossher -> {
+                        MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
+                            if(!check) {
+                                ChatPlugin.sendCMSG(player,"chatp.group.notIn", "&eYou are not in group");
+                                return CompletableFuture.completedFuture(null);
+                            }
+                            return MDatabase.getPlayerTag(uuid);
+                        }).thenAccept((tag) -> {
+                            if(!tag.equalsIgnoreCase("admin")) {
+                                ChatPlugin.sendCMSG(player,"chatp.group.admin", "&eYou are not admin");
+                                return;
+                            }
+                            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                                MDatabase.deleteGroup(args[1]);
+                                MDatabase.setPlayerInGroup(uuid, false);
+                                MDatabase.setPlayerTag(uuid, "none");
+                                MDatabase.setPlayerGroup(uuid, "none");
+                            });
                         });
-                    });
+
+                	});
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {

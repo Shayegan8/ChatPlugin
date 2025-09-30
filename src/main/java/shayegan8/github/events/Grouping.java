@@ -26,11 +26,14 @@ public class Grouping implements Listener {
         String msg = e.getMessage();
         UUID uuid = e.getPlayer().getUniqueId();
         e.setCancelled(true);
-        Bukkit.getOnlinePlayers().parallelStream().forEach(eachPlayer -> {
+        Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
             MDatabase.getPlayerGroup(eachPlayer.getUniqueId()).thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenComposeAsync((condition) -> {
                 if(condition) {
-                    String formatedMSG = ColorUtils.C(e.getPlayer(), ChatPlugin.configuration.getString("playerChat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
+                	System.out.println(1);
+                	String formatedMSG = ColorUtils.C(e.getPlayer(), ChatPlugin.configuration.getString("playerChat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
+                	System.out.println(2);
                     String rp = formatedMSG.replace("{msg}", msg);
+                	System.out.println(3);
                     return CompletableFuture.completedFuture(rp);
                 }
                 return null;
@@ -63,14 +66,18 @@ public class Grouping implements Listener {
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
         MDatabase.playerHasGroup(uuid).thenAccept(has -> {
-           if(!has)
+           if(has)
                return;
-           MDatabase.setPlayerGroup(uuid, "none");
-           MDatabase.setPlayerTag(uuid, "none");
-           MDatabase.setPlayerInGroup(uuid, false);
+           Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+               MDatabase.setPlayerGroup(uuid, "none");
+               MDatabase.setPlayerTag(uuid, "none");
+               MDatabase.setPlayerInGroup(uuid, false);
+           });
         });
-        MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> Placeholders.cache_group.put(uuid, group)));
-        MDatabase.getPlayerTag(uuid).thenAccept(tag -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),() -> Placeholders.cache_tag.put(uuid, tag)));
+        MDatabase.getPlayerGroup(uuid).thenAccept(group -> Placeholders.cache_group.put(uuid, group)).exceptionally(exp -> {
+        			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+        		});
+        MDatabase.getPlayerTag(uuid).thenAccept(tag -> Placeholders.cache_tag.put(uuid, tag));
     }
 
     @EventHandler

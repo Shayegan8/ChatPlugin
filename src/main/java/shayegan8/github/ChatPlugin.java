@@ -1,7 +1,6 @@
 package shayegan8.github;
 
 import lombok.SneakyThrows;
-import me.devnatan.inventoryframework.ViewFrame;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -14,6 +13,8 @@ import org.bukkit.plugin.java.annotation.command.Command;
 import org.bukkit.plugin.java.annotation.command.Commands;
 import org.bukkit.plugin.java.annotation.dependency.SoftDependency;
 import org.bukkit.plugin.java.annotation.permission.Permission;
+import org.bukkit.plugin.java.annotation.plugin.ApiVersion;
+import org.bukkit.plugin.java.annotation.plugin.ApiVersion.Target;
 import org.bukkit.plugin.java.annotation.plugin.Description;
 import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
@@ -21,8 +22,6 @@ import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
 import shayegan8.github.expansions.Placeholders;
-import shayegan8.github.gui.GMute;
-import shayegan8.github.gui.Menu;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,18 +54,10 @@ import java.util.concurrent.CompletableFuture;
 @Permission(name = "chatp.base", desc = "Chatplugin base permission", defaultValue = PermissionDefault.OP)
 @Commands(
     {
-        @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp"),
-        @Command(name = "chatp help", desc = "chatplugin help command", permission = "chatp.base.help", usage = "/chatp help"),
-        @Command(name = "chatp reload", desc = "chatplugin reload command", permission = "chatp.base.reload", usage = "/chatp reload"),
-        @Command(name = "chatp remove", desc = "chatplugin help command", permission = "chatp.base.remove", usage = "/chatp remove playername"),
-        @Command(name = "chatp invite", desc = "chatplugin invite command", permission = "chatp.base.invite", usage = "/chatp invite playername"),
-        @Command(name = "chatp quit", desc = "chatplugin quit command", permission = "chatp.base.quit", usage = "/chatp quit"),
-        @Command(name = "chatp mute", desc = "chatplugin mute command", permission = "chatp.base.mute", usage = "/chatp mute playername"),
-        @Command(name = "chatp join", desc = "chatplugin join command", permission = "chatp.base.join", usage = "/chatp join group"),
-        @Command(name = "chatp group", desc = "chatplugin group command", permission = "chatp.base.group", usage = "/chatp group"),
-        @Command(name = "chatp friends", desc = "chatplugin friends command", permission = "chatp.base.friends", usage = "/chatp friends")
+        @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp")
     }
 )
+@ApiVersion(Target.v1_13)
 @SoftDependency("PlaceholderAPI")
 public final class ChatPlugin extends JavaPlugin {
 
@@ -84,7 +75,6 @@ public final class ChatPlugin extends JavaPlugin {
     private static final String URL = "";
     private FileOutputStream fout = null;
     private static ChatPlugin plugin;
-    public ViewFrame frame = ViewFrame.create(this).with(new GMute(), new Menu());
 
     public static void sendBMSG(CommandSender sender, String path, String msg) {
         CompletableFuture.supplyAsync(() -> ColorUtils.B(ChatPlugin.configuration.getString(path, msg))).thenAccept(result -> {
@@ -135,7 +125,6 @@ public final class ChatPlugin extends JavaPlugin {
             }
         }
         getLogger().info("Registering guis...");
-        frame.register();
         getLogger().info("Registering placeholders (PlaceholderAPI)");
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new Placeholders(this).register();
