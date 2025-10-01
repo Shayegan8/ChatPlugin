@@ -7,6 +7,7 @@ gui:
          1:
             material: "BLACK_STAINED_GLASS_PANE"
             displayName: "&r"
+            state: "unmovable"
             amount: 1
             slots:
                - 1
@@ -42,6 +43,7 @@ gui:
             material: "WHITE_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
+            state: "unmovable"
             slots:
                - 11
                - 12
@@ -62,6 +64,7 @@ gui:
             material: "BLUE_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
+            state: "unmovable"
             slots:
                - 0
                - 8
@@ -71,36 +74,42 @@ gui:
             material: "CAKE"
             displayName: "kir"
             amount: 1
+            state: "unmovable"
             slots:
                - 21
          e:
             material: "COOKIE"
             displayName: "kir"
             amount: 1
+            state: "unmovable"
             slots:
                - 22
          f:
             material: "PLAYER_HEAD"
             displayName: "kir"
-            texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODI0NDJiYmY3MTcxYjVjYWZjYTIxN2M5YmE0NGNlMjc2NDcyMjVkZjc2Y2RhOTY4OWQ2MWE5ZjFjMGE1ZjE3NiJ9fX0
+            texture: "https://textures.minecraft.net/texture/fca8d372f551a27e7d1bb5d51d0a69213d06d7d15be2fc657900ba4a54614600"
             amount: 1
+            state: "unmovable"
             slots:
                - 23
          a:
-            material: "MINECRAT"
+            material: "MINECART"
             displayName: "kir"
             amount: 1
+            state: "unmovable"
             slots:
                - 30
          b:
-            material: "CHEST_MINECRAT"
+            material: "CHEST_MINECART"
             amount: 1
             displayName: "kir"
+            state: "unmovable"
             slots:
                - 31
          c:
-            material: "TNT_MINECRAT"
+            material: "TNT_MINECART"
             amount: 1
             displayName: "kir"
+            state: "unmovable"
             slots:
                - 32

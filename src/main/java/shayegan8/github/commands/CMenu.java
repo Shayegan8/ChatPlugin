@@ -3,7 +3,6 @@ package shayegan8.github.commands;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
-import shayegan8.github.gui.IMenu;
 
 public class CMenu extends CommandManager {
 
@@ -18,6 +17,7 @@ public class CMenu extends CommandManager {
             ChatPlugin.sendBMSG(sender, "chatp.cmenu.notPlayer", "&cYou should be a player");
             return;
         }
-        player.openInventory(IMenu.inv);
+        ChatPlugin.iMenu.onPlayerRequest(player);
+        player.openInventory(ChatPlugin.iMenu.getInv());
     }
 }

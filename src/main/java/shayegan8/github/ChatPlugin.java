@@ -22,6 +22,7 @@ import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
 import shayegan8.github.expansions.Placeholders;
+import shayegan8.github.gui.IMenu;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -73,7 +74,8 @@ public final class ChatPlugin extends JavaPlugin {
     private static final String RED = "\u001b[31m";
     private static final String REFRESH = "\u001b[0m";
     private static final String URL = "";
-    private FileOutputStream fout = null;
+    private FileOutputStream fout;
+    public static IMenu iMenu;
     private static ChatPlugin plugin;
 
     public static void sendBMSG(CommandSender sender, String path, String msg) {
@@ -125,6 +127,8 @@ public final class ChatPlugin extends JavaPlugin {
             }
         }
         getLogger().info("Registering guis...");
+        iMenu = new IMenu();
+        getServer().getPluginManager().registerEvents(iMenu, this);
         getLogger().info("Registering placeholders (PlaceholderAPI)");
         if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new Placeholders(this).register();
