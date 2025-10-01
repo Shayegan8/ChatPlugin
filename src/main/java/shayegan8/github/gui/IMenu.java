@@ -32,7 +32,7 @@ record ItemSave(ItemState state, ItemStack item) {
 
 }
 
-record Entry(String materialName, String state, String displayName, int amount, String texture, List<Integer> slots,
+record Entry(String materialName, String state, String displayName, int amount, List<Integer> slots,
 		List<String> lore) {
 }
 
@@ -59,7 +59,7 @@ public class IMenu implements Listener {
 
 	public IMenu() {
 		inv = Bukkit.createInventory(null, ChatPlugin.configuration_menu.getInt("gui.menu.size", 54));
-		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {
+		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(true).forEach(each -> {
 			String newStr = "gui.menu.list." + each;
 			ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
 			String materialName = section.getString("material");
@@ -69,14 +69,12 @@ public class IMenu implements Listener {
 			List<String> lore = section.getStringList("lore");
 			String displayName = section.getString("displayName");
 			ItemStack item;
-			if (materialName.equals("PLAYER_HEAD")) {
+			if (materialName.equals("PLAYER_HEAD"))
 				item = getSkull(section.getString("texture"));
-				entries.put(newStr,
-						new Entry(materialName, state, displayName, amount, section.getString("texture"), slots, lore));
-			} else {
+			else
 				item = new ItemStack(Material.valueOf(materialName), amount);
-				entries.put(newStr, new Entry(materialName, state, displayName, amount, null, slots, lore));
-			}
+
+			entries.put(newStr, new Entry(materialName, state, displayName, amount, slots, lore));
 			char ch = newStr.charAt(newStr.length() - 1);
 			if (state.equalsIgnoreCase("unmovable"))
 				items.put(ch, new ItemSave(ItemState.UNMOVABLE, item));

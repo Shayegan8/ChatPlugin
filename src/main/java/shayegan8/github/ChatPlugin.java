@@ -5,6 +5,7 @@ import me.clip.placeholderapi.PlaceholderAPI;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -37,8 +38,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
 @Description("Simple chat plugin :O")
@@ -67,7 +68,7 @@ public final class ChatPlugin extends JavaPlugin {
 			new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove",
 			new Remove(), "staff", new Staff(), "menu", new CMenu());
 	public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
-	public static Map<String, String> entries = new ConcurrentHashMap<String, String>();
+	public static Map<String, Object> entries;
 	public static MDatabase mDB;
 	private static final String GREEN = "\u001b[32m";
 	private static final String RED = "\u001b[31m";
@@ -78,13 +79,23 @@ public final class ChatPlugin extends JavaPlugin {
 	private static ChatPlugin plugin;
 
 	public static void sendBMSG(CommandSender sender, String path, String msg) {
-		Bukkit.getScheduler().runTask(getInstance(), () -> sender.sendMessage(configuration.getString(path, msg)));
+		Bukkit.getScheduler().runTask(getInstance(), () -> sender.sendMessage((String) entries.getOrDefault(path, msg)));
 	}
 
 	public static void sendCMSG(Player player, String path, String msg) {
-		Bukkit.getScheduler().runTask(getInstance(), () -> player.sendMessage(PlaceholderAPI.setPlaceholders(player, configuration.getString(path, msg))));
+		Bukkit.getScheduler().runTask(getInstance(), () -> player.sendMessage(PlaceholderAPI.setPlaceholders(player, (String) entries.getOrDefault(path, msg))));
     }
-
+	
+	public static Map<String, Object> sectionSaver() {
+		ConfigurationSection section = configuration.getConfigurationSection("chatp");
+		section.getKeys(true).forEach(each -> {
+			String key = "chatp." + each;
+			Object eachSection = configuration.get(key);
+			entries.put(key, eachSection);
+		});
+		return Collections.unmodifiableMap(entries);
+	}
+	
 	public static ChatPlugin getInstance() {
 		return plugin;
 	}
@@ -95,6 +106,7 @@ public final class ChatPlugin extends JavaPlugin {
 		plugin = this;
 		getLogger().info("Configuration...");
 		createConfig();
+		entries = sectionSaver();
 		getLogger().info("Registering commands...");
 		this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
 		this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));

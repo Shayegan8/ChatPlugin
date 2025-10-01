@@ -8,6 +8,7 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -45,7 +46,8 @@ public class Group extends CommandManager {
             ChatPlugin.sendBMSG(sender, "chatp.group.usage", getUsage());
     }
 
-    private void player(CommandSender sender, String[] args) {
+    @SuppressWarnings("unchecked")
+	private void player(CommandSender sender, String[] args) {
         Player player = (Player) sender;
         UUID uuid = player.getUniqueId();
         if (args.length == 2) {
@@ -94,7 +96,7 @@ public class Group extends CommandManager {
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help")).thenAccept(ls -> {
+            CompletableFuture.supplyAsync(() -> (List<String>) ChatPlugin.entries.get("chatp.group.help")).thenAccept(ls -> {
                 ls.forEach(str -> {
                     Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(ColorUtils.C(player, str)));
                 });
@@ -102,7 +104,7 @@ public class Group extends CommandManager {
                 throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
             });
         } else
-            Thread.ofVirtual().start(() -> sender.sendMessage(ColorUtils.C(player, ChatPlugin.configuration.getString("chatp.group.usage" , getUsage()))));
+            ChatPlugin.sendCMSG(player, "chatp.group.usage" , getUsage());
     }
 
     @Override

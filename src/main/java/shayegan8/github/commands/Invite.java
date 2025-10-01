@@ -29,7 +29,8 @@ public class Invite extends CommandManager {
         return "chatp.base.invite";
     }
 
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     public void execute(CommandSender sender, String[] args) {
        if (!(sender instanceof Player player)) {
            ChatPlugin.sendBMSG(sender, "chatp.invited.notPlayer", "&cYou should be a player");
