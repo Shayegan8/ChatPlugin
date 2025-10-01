@@ -11,63 +11,63 @@ import java.util.UUID;
 
 public class Staff extends CommandManager {
 
-    @Override
-    public String getPermission() {
-        return "chatp.base.staff";
-    }
+	@Override
+	public String getPermission() {
+		return "chatp.base.staff";
+	}
 
-    @Override
-    public String getUsage() {
-        return "&e/chatp staff {playerName}";
-    }
+	@Override
+	public String getUsage() {
+		return "&e/chatp staff {playerName}";
+	}
 
-    private void console(CommandSender sender, String[] args) {
-        if(args.length != 1) {
-            ChatPlugin.sendBMSG(sender, "chatp.staff.usage", getUsage());
-            return;
-        }
-        if(Bukkit.getPlayer(args[0]) == null) {
-            ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
-            return;
-        }
-        UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
-        ChatPlugin.sendBMSG(sender, "chatp.staff.promoted", "&aPromoted");
-        MDatabase.setPlayerTag(argUUID, "staff");
-    }
+	private void console(CommandSender sender, String[] args) {
+		if (args.length != 1) {
+			ChatPlugin.sendBMSG(sender, "chatp.staff.usage", getUsage());
+			return;
+		}
+		if (Bukkit.getPlayer(args[0]) == null) {
+			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
+			return;
+		}
+		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		ChatPlugin.sendBMSG(sender, "chatp.staff.promoted", "&aPromoted");
+		MDatabase.setPlayerTag(argUUID, "staff");
+	}
 
-    private void player(CommandSender sender, String[] args) {
-        Player player = (Player) sender;
-        UUID uuid = player.getUniqueId();
-        if(args.length != 1) {
-            ChatPlugin.sendBMSG(player, "chatp.staff.usage", getUsage());
-            return;
-        }
-        if(Bukkit.getPlayer(args[0]) == null) {
-            ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
-            return;
-        }
-        if(args[0].equals(sender.getName())) {
-            ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckYourself", "&cYou are admin ;|");
-            return;
-        }
-        UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
-        MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
-           if(!tag.equalsIgnoreCase("admin")) {
-               ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckIt", "&cYou should be admin");
-               return;
-           }
-           Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> MDatabase.setPlayerTag(argUUID, "staff"));
-           ChatPlugin.sendCMSG(player, "chatp.staff.promoted", "&e%player_name% &aSuccessfully promoted");
-        }).exceptionallyAsync(exp -> {
-            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-        });
-    }
+	private void player(CommandSender sender, String[] args) {
+		Player player = (Player) sender;
+		UUID uuid = player.getUniqueId();
+		if (args.length != 1) {
+			ChatPlugin.sendBMSG(player, "chatp.staff.usage", getUsage());
+			return;
+		}
+		if (Bukkit.getPlayer(args[0]) == null) {
+			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
+			return;
+		}
+		if (args[0].equals(sender.getName())) {
+			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckYourself", "&cYou are admin ;|");
+			return;
+		}
+		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
+			if (!tag.equalsIgnoreCase("admin")) {
+				ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckIt", "&cYou should be admin");
+				return;
+			}
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> MDatabase.setPlayerTag(argUUID, "staff"));
+			ChatPlugin.sendCMSG(player, "chatp.staff.promoted", "&e%player_name% &aSuccessfully promoted");
+		}).exceptionallyAsync(exp -> {
+			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+		});
+	}
 
-    @Override
-    public void execute(CommandSender sender, String[] args) {
-        if(sender instanceof Player)
-            player(sender, args);
-        else
-            console(sender, args);
-    }
+	@Override
+	public void execute(CommandSender sender, String[] args) {
+		if (sender instanceof Player)
+			player(sender, args);
+		else
+			console(sender, args);
+	}
 }

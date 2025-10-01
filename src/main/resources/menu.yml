@@ -4,7 +4,7 @@ gui:
       title:
          text: "&eChatPlugin menu"
       list:
-         1:
+         zadw:
             material: "BLACK_STAINED_GLASS_PANE"
             displayName: "&r"
             state: "unmovable"
@@ -19,6 +19,7 @@ gui:
                - 7
                - 9
                - 10
+               - 16
                - 17
                - 18
                - 19
@@ -31,7 +32,6 @@ gui:
                - 36
                - 37
                - 44
-               - 43
                - 52
                - 51
                - 50
@@ -39,7 +39,7 @@ gui:
                - 48
                - 47
                - 46
-         2:
+         qwzx:
             material: "WHITE_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
@@ -60,7 +60,7 @@ gui:
                - 20
                - 29
                - 38
-         3:
+         kos:
             material: "BLUE_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
@@ -70,46 +70,103 @@ gui:
                - 8
                - 53
                - 45
+         sher:
+            material: "BLACK_STAINED_GLASS_PANE"
+            displayName: '&9'
+            amount: 1
+            state: "unmovable"
+            slots:
+               - 43   
          d:
             material: "CAKE"
-            displayName: "kir"
+            displayName: "&a&l>&r &9Invite players"
             amount: 1
             state: "unmovable"
             slots:
                - 21
+            lore:
+               - "&r"
+               - "&8- &eInvite players to your group"
+               - "&8- &eBy clicking this it will show"
+               - "&8- &eYou all the players you can invite"
          e:
             material: "COOKIE"
-            displayName: "kir"
+            displayName: "&a&l>&r &9Available groups"
             amount: 1
             state: "unmovable"
             slots:
                - 22
+            lore:
+               - "&r"
+               - "&8- &eBy clicking this it shows"
+               - "&8- &eYou all groups that are"
+               - "&8- &eInserted in groups table"
          f:
             material: "PLAYER_HEAD"
-            displayName: "kir"
+            displayName: "&cDelete your group"
             texture: "https://textures.minecraft.net/texture/fca8d372f551a27e7d1bb5d51d0a69213d06d7d15be2fc657900ba4a54614600"
             amount: 1
             state: "unmovable"
             slots:
                - 23
+            lore:
+               - "&r"
+               - "&8- &eClick this to delete"
+               - "&8- &eYour group"
          a:
             material: "MINECART"
-            displayName: "kir"
+            displayName: "&a&l> &eMute players"
             amount: 1
             state: "unmovable"
             slots:
-               - 30
+               - 30               
          b:
             material: "CHEST_MINECART"
             amount: 1
-            displayName: "kir"
+            displayName: "&a&l> &eGet help"
             state: "unmovable"
             slots:
                - 31
          c:
             material: "TNT_MINECART"
             amount: 1
-            displayName: "kir"
+            displayName: "&cQuit"
             state: "unmovable"
             slots:
                - 32
+   mute:
+      size: 54
+      title:
+         text: "&eChatPlugin mute players"
+      list:
+         shitass:
+            material: "BLACK_STAINED_GLASS_PANE"
+            displayName: '&r'
+            amount: 1
+            state: "unmovable"
+            slots:
+               - 0
+               - 1
+               - 2
+               - 3
+               - 4
+               - 5
+               - 6
+               - 7
+               - 8
+               - 17
+               - 26
+               - 27
+               - 35
+               - 36
+               - 44
+               - 45
+               - 46
+               - 47
+               - 48
+               - 49
+               - 50
+               - 51
+               - 52
+               - 53
+               

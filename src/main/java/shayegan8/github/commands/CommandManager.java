@@ -4,12 +4,12 @@ import org.bukkit.command.CommandSender;
 
 public abstract class CommandManager {
 
-    public String getUsage() {
-        return null;
-    }
+	public String getUsage() {
+		return null;
+	}
 
-    public abstract String getPermission();
+	public abstract String getPermission();
 
-    public abstract void execute(CommandSender sender, String[] args);
+	public abstract void execute(CommandSender sender, String[] args);
 
 }

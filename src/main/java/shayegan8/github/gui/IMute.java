@@ -13,18 +13,17 @@ import org.bukkit.inventory.ItemStack;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
-
 @Getter
-public class IMenu {
+public class IMute {
 
 	private Inventory inv;
 	private Map<String, ItemSave> items = new ConcurrentHashMap<String, ItemSave>();
 	private Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
 
-	public IMenu() {
-	    inv = Bukkit.createInventory(null, ChatPlugin.configuration_menu.getInt("gui.menu.size", 54));
-		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {
-			String newStr = "gui.menu.list." + each;
+	public IMute() {
+	    inv = Bukkit.createInventory(null, ChatPlugin.configuration_menu.getInt("gui.mute.size", 54));
+		ChatPlugin.configuration_menu.getConfigurationSection("gui.mute.list").getKeys(false).forEach(each -> {
+			String newStr = "gui.mute.list." + each;
 			ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
 			String materialName = section.getString("material");
 			String state = section.getString("state", "unmovable");

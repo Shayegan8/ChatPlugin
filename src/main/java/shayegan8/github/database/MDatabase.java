@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -58,9 +59,6 @@ public class MDatabase {
 		}
 	}
 
-	/**
-	 * @Maybe-unused
-	 */
 	private static UUID convertToUUID(byte[] bytes) {
 		ByteBuffer buffer = ByteBuffer.wrap(bytes);
 		long mostSignificantBits = buffer.getLong();
@@ -81,11 +79,11 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void createGroup(String groupName) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement(
 						"INSERT INTO groups SELECT ? WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groupName = ?)");
@@ -95,7 +93,7 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static CompletableFuture<Boolean> isGroupExist(String groupName) {
@@ -112,11 +110,11 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void deleteGroup(String groupName) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pStatement = ChatPlugin.mDB.getConnection()
 						.prepareStatement("DELETE FROM groups WHERE groupName=?");
@@ -125,7 +123,7 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(e);
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static CompletableFuture<String> getPlayerGroup(UUID playerUUID) {
@@ -143,7 +141,24 @@ public class MDatabase {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
+	}
+
+	public static CompletableFuture<List<UUID>> getPlayersByGroup(String groupName) {
+		return CompletableFuture.supplyAsync(() -> {
+			List<UUID> ls = new ArrayList<UUID>();
+			try {
+				PreparedStatement pState = ChatPlugin.mDB.getConnection()
+						.prepareStatement("SELECT playerUUID FROM players WHERE groupName = ?");
+				pState.setString(1, groupName);
+				var query = pState.executeQuery();
+				while (query.next())
+					ls.add(convertToUUID(query.getBytes("playerUUID")));
+			} catch (SQLException e) {
+				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
+			}
+			return Collections.unmodifiableList(ls);
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static CompletableFuture<Boolean> playerHasGroup(UUID playerUUID) {
@@ -161,28 +176,11 @@ public class MDatabase {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
 			}
-		});
-	}
-
-	public static String getPlayerGroupBlocking(UUID playerUUID) {
-		try {
-			PreparedStatement pState = ChatPlugin.mDB.getConnection()
-					.prepareStatement("SELECT groupName FROM players WHERE playerUUID = ?");
-			String groupName = null;
-			pState.setBytes(1, convertToBlob(playerUUID));
-			var query = pState.executeQuery();
-			while (query.next())
-				groupName = query.getString("groupName");
-			System.out.println(4);
-			return groupName;
-		} catch (SQLException e) {
-			throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-
-		}
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void setPlayerGroup(UUID playerUUID, String groupName) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("INSERT INTO players (groupName, playerUUID) VALUES (?, ?)"
@@ -197,11 +195,11 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void setPlayerTag(UUID playerUUID, String playerTag) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("INSERT INTO players (playerTag, playerUUID) VALUES (?, ?)"
@@ -212,11 +210,11 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void setPlayerInGroup(UUID playerUUID, boolean inGroup) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("INSERT INTO players (inGroup, playerUUID) VALUES (?, ?)"
@@ -227,11 +225,11 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void setPlayerMuted(UUID playerUUID, boolean muted) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("INSERT INTO players (muted, playerUUID) VALUES (?, ?)"
@@ -242,11 +240,11 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static void setPlayerInvited(UUID playerUUID, boolean invited) {
-		Thread.ofVirtual().start(() -> {
+		CompletableFuture.runAsync(() -> {
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("INSERT INTO players (invited, playerUUID) VALUES (?, ?)"
@@ -257,7 +255,7 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static CompletableFuture<String> getPlayerTag(UUID playerUUID) {
@@ -275,23 +273,7 @@ public class MDatabase {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
 			}
-		});
-	}
-
-	public static String getPlayerTagBlocking(UUID playerUUID) {
-		try {
-			PreparedStatement pState = ChatPlugin.mDB.getConnection()
-					.prepareStatement("SELECT playerTag FROM players WHERE playerUUID = ?");
-			String playerTag = null;
-			pState.setBytes(1, convertToBlob(playerUUID));
-			var query = pState.executeQuery();
-			while (query.next())
-				playerTag = query.getString("groupName");
-			return playerTag;
-		} catch (SQLException e) {
-			throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-
-		}
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static CompletableFuture<Boolean> isPlayerInGroup(UUID playerUUID) {
@@ -309,7 +291,7 @@ public class MDatabase {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	public static CompletableFuture<Boolean> isPlayerMuted(UUID playerUUID) {
@@ -327,7 +309,7 @@ public class MDatabase {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	private static byte[] convertToBlob(UUID playerUUID) {
@@ -352,6 +334,6 @@ public class MDatabase {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
 			}
-		});
+		}, ChatPlugin.EVIRTUAL);
 	}
 }

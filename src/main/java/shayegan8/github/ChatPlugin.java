@@ -4,12 +4,17 @@ import lombok.SneakyThrows;
 import me.clip.placeholderapi.PlaceholderAPI;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.annotation.command.Command;
@@ -21,11 +26,18 @@ import org.bukkit.plugin.java.annotation.plugin.ApiVersion.Target;
 import org.bukkit.plugin.java.annotation.plugin.Description;
 import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
+import org.bukkit.profile.PlayerProfile;
+import org.bukkit.profile.PlayerTextures;
+
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
 import shayegan8.github.expansions.Placeholders;
+import shayegan8.github.gui.Entry;
+import shayegan8.github.gui.GuiListener;
 import shayegan8.github.gui.IMenu;
+import shayegan8.github.gui.IMute;
+import shayegan8.github.gui.ItemSave;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,8 +50,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
 @Description("Simple chat plugin :O")
@@ -74,20 +94,25 @@ public final class ChatPlugin extends JavaPlugin {
 	private static final String RED = "\u001b[31m";
 	private static final String REFRESH = "\u001b[0m";
 	private static final String URL = "";
+	public static final ExecutorService EVIRTUAL = Executors.newVirtualThreadPerTaskExecutor();
 	private FileOutputStream fout;
+	public static IMute iMute;
 	public static IMenu iMenu;
 	private static ChatPlugin plugin;
 
 	public static void sendBMSG(CommandSender sender, String path, String msg) {
-		Bukkit.getScheduler().runTask(getInstance(), () -> sender.sendMessage((String) entries.getOrDefault(path, msg)));
+		Bukkit.getScheduler().runTask(getInstance(),
+				() -> sender.sendMessage(ColorUtils.B((String) entries.getOrDefault(path, msg))));
 	}
 
 	public static void sendCMSG(Player player, String path, String msg) {
-		Bukkit.getScheduler().runTask(getInstance(), () -> player.sendMessage(PlaceholderAPI.setPlaceholders(player, (String) entries.getOrDefault(path, msg))));
-    }
-	
+		Bukkit.getScheduler().runTask(getInstance(), () -> player.sendMessage(PlaceholderAPI.setPlaceholders(player,
+				ColorUtils.C(player, (String) entries.getOrDefault(path, msg)))));
+	}
+
 	public static Map<String, Object> sectionSaver() {
 		ConfigurationSection section = configuration.getConfigurationSection("chatp");
+		entries = new ConcurrentHashMap<String, Object>();
 		section.getKeys(true).forEach(each -> {
 			String key = "chatp." + each;
 			Object eachSection = configuration.get(key);
@@ -95,7 +120,7 @@ public final class ChatPlugin extends JavaPlugin {
 		});
 		return Collections.unmodifiableMap(entries);
 	}
-	
+
 	public static ChatPlugin getInstance() {
 		return plugin;
 	}
@@ -114,8 +139,10 @@ public final class ChatPlugin extends JavaPlugin {
 		mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
 		getLogger().info("Registering guis...");
 		iMenu = new IMenu();
+		iMute = new IMute();
 		getLogger().info("Registering events...");
 		getServer().getPluginManager().registerEvents(new Grouping(), this);
+		getServer().getPluginManager().registerEvents(new GuiListener(), this);
 		if (configuration.getBoolean("update", false)) {
 			try {
 				getLogger().info("Update is enabled...");
@@ -131,7 +158,6 @@ public final class ChatPlugin extends JavaPlugin {
 				fout.close();
 			}
 		}
-		getServer().getPluginManager().registerEvents(iMenu, this);
 		getLogger().info("Registering placeholders (PlaceholderAPI)");
 		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
 			new Placeholders(this).register();
@@ -150,7 +176,99 @@ public final class ChatPlugin extends JavaPlugin {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+		EVIRTUAL.shutdown();
 		getLogger().info(RED + "ChatPlugin disabled" + REFRESH);
+	}
+
+	@SneakyThrows
+	public static ItemStack getSkull(String uri) {
+		ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+		SkullMeta meta = (SkullMeta) head.getItemMeta();
+		PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID(), "foo");
+		PlayerTextures textures = profile.getTextures();
+		textures.setSkin(URI.create(uri).toURL());
+		profile.setTextures(textures);
+		meta.setOwnerProfile(profile);
+		head.setItemMeta(meta);
+		return head;
+	}
+
+	public static ItemStack getSkullOfOwner(Player player) {
+		ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+		SkullMeta meta = (SkullMeta) head.getItemMeta();
+		meta.setOwnerProfile(player.getPlayerProfile());
+		head.setItemMeta(meta);
+		return head;
+	}
+
+	public static void onPlayerRequest(Player player, Map<String, Entry> entries, Map<String, ItemSave> items) {
+		CompletableFuture.runAsync(() -> {
+			entries.entrySet().stream().forEach((entry) -> {
+				String key = entry.getKey();
+				String[] spKey = key.split("\\.");
+				System.out.println(key);
+				Entry value = entry.getValue();
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+					ItemStack item = items.get(spKey[spKey.length - 1]).item();
+					ItemMeta meta = item.getItemMeta();
+					meta.setDisplayName(ColorUtils.C(player, value.displayName()));
+					meta.setLore(
+							value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
+					item.setItemMeta(meta);
+					value.slots().forEach(slot -> {
+						System.out.println(slot + " " + value.materialName());
+						iMenu.getInv().setItem(slot, item);
+					});
+				});
+			});
+		}, EVIRTUAL);
+	}
+
+	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Map<String, ItemSave> items,
+			Inventory inv) {
+		CompletableFuture.runAsync(() -> {
+			entries.entrySet().stream().forEach((entry) -> {
+				String key = entry.getKey();
+				String[] spKey = key.split("\\.");
+				Entry value = entry.getValue();
+				
+				List<Integer> slots = new ArrayList<Integer>();
+				ItemStack[] avItems = inv.getContents();
+				for (int slot = 0; slot < avItems.length; slot++)
+					if (avItems == null || avItems[slot].getType() == Material.AIR)
+						slots.add(slot);
+				
+				ItemStack item = items.get(spKey[spKey.length - 1]).item();
+				Bukkit.getScheduler().runTask(getInstance(), () -> {
+					ItemMeta meta = item.getItemMeta();
+					meta.setDisplayName(ColorUtils.C(player, value.displayName()));
+					CompletableFuture.supplyAsync(() -> value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList())).thenAccept(lore -> {
+						Bukkit.getScheduler().runTask(getInstance(), () -> {
+							meta.setLore(lore);
+						});
+					});
+					item.setItemMeta(meta);
+					value.slots().forEach(slot -> {
+						iMenu.getInv().setItem(slot, item);
+					});
+				});			
+				
+				MDatabase.getPlayerGroup(player.getUniqueId()).thenCompose(group -> {
+					if (!group.equalsIgnoreCase("none"))
+						return MDatabase.getPlayersByGroup(group);
+					return CompletableFuture.completedStage(null);
+				}).thenAcceptAsync(playerList -> {
+					playerList.stream().forEach(uuid -> {
+						slots.forEach(slot -> {
+							Bukkit.getScheduler().runTask(getInstance(), () -> {
+								ItemStack head = getSkullOfOwner(Bukkit.getPlayer(uuid));
+								inv.setItem(slot, head);
+							});
+						});
+					});
+				});
+			});
+		}, EVIRTUAL);
 	}
 
 	private void createConfig() {
@@ -181,5 +299,5 @@ public final class ChatPlugin extends JavaPlugin {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 }

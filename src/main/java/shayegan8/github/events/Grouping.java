@@ -23,8 +23,12 @@ public class Grouping implements Listener {
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent e) {
-        String msg = e.getMessage();
         UUID uuid = e.getPlayer().getUniqueId();
+		if (Placeholders.cache_tag.get(uuid) == null)
+			Placeholders.updateGroup(uuid);
+		if (Placeholders.cache_tag.get(uuid) == null)
+			Placeholders.updateTag(uuid);
+        String msg = e.getMessage();
         e.setCancelled(true);
         Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
             MDatabase.getPlayerGroup(eachPlayer.getUniqueId()).thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenComposeAsync((condition) -> {
