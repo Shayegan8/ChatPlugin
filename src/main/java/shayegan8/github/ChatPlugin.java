@@ -1,6 +1,8 @@
 package shayegan8.github;
 
 import lombok.SneakyThrows;
+import me.clip.placeholderapi.PlaceholderAPI;
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -35,9 +37,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
 @Description("Simple chat plugin :O")
@@ -53,130 +54,120 @@ import java.util.concurrent.CompletableFuture;
 @Permission(name = "chatp.friends", desc = "Chatplugin friends permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.*", desc = "Chatplugin wildcard permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.base", desc = "Chatplugin base permission", defaultValue = PermissionDefault.OP)
-@Commands(
-    {
-        @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp")
-    }
-)
+@Commands({ @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp") })
 @ApiVersion(Target.v1_13)
 @SoftDependency("PlaceholderAPI")
 public final class ChatPlugin extends JavaPlugin {
 
-    private static File file_;
-    private static File file2_;
-    public static FileConfiguration configuration;
-    public static FileConfiguration configuration_menu;
-    public static Map<String, CommandManager> commands = Map.of
-            ("group", new Group(), "help", new Help(), "invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove", new Remove(), "staff", new Staff(), "menu", new CMenu());
-    public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
-    public static MDatabase mDB;
-    private static final String GREEN = "\u001b[32m";
-    private static final String RED = "\u001b[31m";
-    private static final String REFRESH = "\u001b[0m";
-    private static final String URL = "";
-    private FileOutputStream fout;
-    public static IMenu iMenu;
-    private static ChatPlugin plugin;
+	private static File file_;
+	private static File file2_;
+	public static FileConfiguration configuration;
+	public static FileConfiguration configuration_menu;
+	public static Map<String, CommandManager> commands = Map.of("group", new Group(), "help", new Help(), "invite",
+			new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove",
+			new Remove(), "staff", new Staff(), "menu", new CMenu());
+	public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
+	public static Map<String, String> entries = new ConcurrentHashMap<String, String>();
+	public static MDatabase mDB;
+	private static final String GREEN = "\u001b[32m";
+	private static final String RED = "\u001b[31m";
+	private static final String REFRESH = "\u001b[0m";
+	private static final String URL = "";
+	private FileOutputStream fout;
+	public static IMenu iMenu;
+	private static ChatPlugin plugin;
 
-    public static void sendBMSG(CommandSender sender, String path, String msg) {
-        CompletableFuture.supplyAsync(() -> ColorUtils.B(ChatPlugin.configuration.getString(path, msg))).thenAccept(result -> {
-            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> sender.sendMessage(result));
-        }).exceptionallyAsync(exp -> {
-            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-        });
+	public static void sendBMSG(CommandSender sender, String path, String msg) {
+		Bukkit.getScheduler().runTask(getInstance(), () -> sender.sendMessage(configuration.getString(path, msg)));
+	}
+
+	public static void sendCMSG(Player player, String path, String msg) {
+		Bukkit.getScheduler().runTask(getInstance(), () -> player.sendMessage(PlaceholderAPI.setPlaceholders(player, configuration.getString(path, msg))));
     }
 
-    public static void sendCMSG(Player player, String path, String msg) {
-        CompletableFuture.supplyAsync(() -> ColorUtils.C(player, ChatPlugin.configuration.getString(path, msg))).thenAccept(result -> {
-            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> player.sendMessage(result));
-        }).exceptionallyAsync(exp -> {
-            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-        });
-    }
+	public static ChatPlugin getInstance() {
+		return plugin;
+	}
 
-    public static ChatPlugin getInstance() {
-        return plugin;
-    }
+	@SneakyThrows
+	@Override
+	public void onEnable() {
+		plugin = this;
+		getLogger().info("Configuration...");
+		createConfig();
+		getLogger().info("Registering commands...");
+		this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
+		this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));
+		getLogger().info("Establishing connection to database...");
+		mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
+		getLogger().info("Registering guis...");
+		iMenu = new IMenu();
+		getLogger().info("Registering events...");
+		getServer().getPluginManager().registerEvents(new Grouping(), this);
+		if (configuration.getBoolean("update", false)) {
+			try {
+				getLogger().info("Update is enabled...");
+				ReadableByteChannel channel = Channels.newChannel(new URI(URL).toURL().openStream());
+				Path path = Path.of("plugins/update");
+				if (Files.notExists(path))
+					Files.createDirectory(path);
+				fout = new FileOutputStream("plugins/updates/");
+				FileChannel fc = fout.getChannel();
+				getLogger().info("Downloading...");
+				fc.transferFrom(channel, 0, Long.MAX_VALUE);
+			} finally {
+				fout.close();
+			}
+		}
+		getServer().getPluginManager().registerEvents(iMenu, this);
+		getLogger().info("Registering placeholders (PlaceholderAPI)");
+		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+			new Placeholders(this).register();
+			getLogger().info(GREEN + "ChatPlugin enabled" + REFRESH);
+		} else {
+			getLogger().info(RED + "Couldn't find PlaceholderAPI, disabling plugin..." + REFRESH);
+			getPluginLoader().disablePlugin(this);
+		}
+	}
 
-    @SneakyThrows
-    @Override
-    public void onEnable() {
-        plugin = this;
-        getLogger().info("Configuration...");
-        createConfig();
-        getLogger().info("Registering commands...");
-        this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
-        this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));
-        getLogger().info("Establishing connection to database...");
-        mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
-        getLogger().info("Registering events...");
-        getServer().getPluginManager().registerEvents(new Grouping(), this);
-        if(configuration.getBoolean("update", false)) {
-            try {
-                getLogger().info("Update is enabled...");
-                ReadableByteChannel channel = Channels.newChannel(new URI(URL).toURL().openStream());
-                Path path = Path.of("plugins/update");
-                if(Files.notExists(path))
-                    Files.createDirectory(path);
-                fout = new FileOutputStream("plugins/updates/");
-                FileChannel fc = fout.getChannel();
-                getLogger().info("Downloading...");
-                fc.transferFrom(channel, 0, Long.MAX_VALUE);
-            } finally {
-                fout.close();
-            }
-        }
-        getLogger().info("Registering guis...");
-        iMenu = new IMenu();
-        getServer().getPluginManager().registerEvents(iMenu, this);
-        getLogger().info("Registering placeholders (PlaceholderAPI)");
-        if(Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new Placeholders(this).register();
-            getLogger().info(GREEN + "ChatPlugin enabled" + REFRESH);
-        } else {
-            getLogger().info(RED + "Couldn't find PlaceholderAPI, disabling plugin..." + REFRESH);
-            getPluginLoader().disablePlugin(this);
-        }
-    }
+	@Override
+	public void onDisable() {
+		try {
+			if (mDB.getConnection() != null)
+				mDB.getConnection().close();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+		getLogger().info(RED + "ChatPlugin disabled" + REFRESH);
+	}
 
-    @Override
-    public void onDisable() {
-        try {
-            if(mDB.getConnection() != null)
-                mDB.getConnection().close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        getLogger().info(RED + "ChatPlugin disabled" + REFRESH);
-    }
+	private void createConfig() {
+		file_ = Paths.get(getDataFolder() + "/chat.yml").toFile();
+		file2_ = Paths.get(getDataFolder() + "/menu.yml").toFile();
+		if (!file_.exists())
+			saveResource("chat.yml", false);
+		if (!file2_.exists())
+			saveResource("menu.yml", false);
+		configuration = YamlConfiguration.loadConfiguration(file_);
+		configuration_menu = YamlConfiguration.loadConfiguration(file2_);
+	}
 
-    private void createConfig() {
-        file_ = Paths.get(getDataFolder() + "/chat.yml").toFile();
-        file2_ = Paths.get(getDataFolder() + "/menu.yml").toFile();
-        if(!file_.exists())
-            saveResource("chat.yml", false);
-        if(!file2_.exists())
-            saveResource("menu.yml", false);
-        configuration = YamlConfiguration.loadConfiguration(file_);
-        configuration_menu = YamlConfiguration.loadConfiguration(file2_);
-    }
+	public static void saveChat() {
+		try {
+			configuration.save(file_);
+			configuration_menu.save(file2_);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public static void saveChat() {
-        try {
-            configuration.save(file_);
-            configuration_menu.save(file2_);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void loadChat() {
-        try {
-            configuration.load(file_);
-            configuration_menu.load(file2_);
-        } catch (IOException | InvalidConfigurationException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public static void loadChat() {
+		try {
+			configuration.load(file_);
+			configuration_menu.load(file2_);
+		} catch (IOException | InvalidConfigurationException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 }

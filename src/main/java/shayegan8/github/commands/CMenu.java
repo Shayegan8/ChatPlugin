@@ -8,7 +8,7 @@ public class CMenu extends CommandManager {
 
     @Override
     public String getPermission() {
-        return "";
+        return "chatp.base.menu";
     }
 
     @Override
