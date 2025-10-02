@@ -27,7 +27,7 @@ public class MDatabase {
 	public MDatabase(String name) {
 		this.name = name;
 		try {
-			Path path_ = Paths.get(path);
+			final Path path_ = Paths.get(path);
 			if (Files.notExists(path_))
 				Files.createDirectory(path_);
 			switch (name) {
@@ -60,22 +60,22 @@ public class MDatabase {
 	}
 
 	private static UUID convertToUUID(byte[] bytes) {
-		ByteBuffer buffer = ByteBuffer.wrap(bytes);
-		long mostSignificantBits = buffer.getLong();
-		long leastSignificantBits = buffer.getLong();
+		final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+		final long mostSignificantBits = buffer.getLong();
+		final long leastSignificantBits = buffer.getLong();
 		return new UUID(mostSignificantBits, leastSignificantBits);
 	}
 
 	public static CompletableFuture<List<String>> getGroupList() {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				List<String> list = new ArrayList<>();
+				final List<String> list = new ArrayList<>();
 				PreparedStatement pStatement = ChatPlugin.mDB.getConnection()
 						.prepareStatement("SELECT groupName FROM groups");
 				ResultSet query = pStatement.executeQuery();
 				while (query.next())
 					list.add(query.getString("groupName"));
-				return list;
+				return Collections.unmodifiableList(list);
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
@@ -146,7 +146,7 @@ public class MDatabase {
 
 	public static CompletableFuture<List<UUID>> getPlayersByGroup(String groupName) {
 		return CompletableFuture.supplyAsync(() -> {
-			List<UUID> ls = new ArrayList<UUID>();
+			final List<UUID> ls = new ArrayList<UUID>();
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("SELECT playerUUID FROM players WHERE groupName = ?");
@@ -313,7 +313,7 @@ public class MDatabase {
 	}
 
 	private static byte[] convertToBlob(UUID playerUUID) {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
+		final ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
 		buffer.putLong(playerUUID.getMostSignificantBits());
 		buffer.putLong(playerUUID.getLeastSignificantBits());
 		return buffer.array();
@@ -324,7 +324,7 @@ public class MDatabase {
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("SELECT invited FROM players WHERE playerUUID=?");
-				Boolean invited = null;
+				boolean invited = false;
 				pState.setBytes(1, convertToBlob(playerUUID));
 				ResultSet query = pState.executeQuery();
 				while (query.next())

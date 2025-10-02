@@ -31,7 +31,7 @@ public class Quit extends CommandManager {
 			ChatPlugin.sendCMSG(player, "chatp.quit.usage", getUsage());
 			return;
 		}
-		UUID senderUUID = player.getUniqueId();
+		final UUID senderUUID = player.getUniqueId();
 		MDatabase.isPlayerInGroup(senderUUID).thenAccept(isInGroup -> {
 			if (!isInGroup)
 				ChatPlugin.sendCMSG(player, "chatp.quit.notGroup", "&cYou are not in any group");

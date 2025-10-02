@@ -48,8 +48,8 @@ public class Invite extends CommandManager {
 			ChatPlugin.sendCMSG(player, "chatp.invite.cantFind", "&cCant find this player");
 			return;
 		}
-		UUID senderUUID = player.getUniqueId();
-		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		final UUID senderUUID = player.getUniqueId();
+		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 		MDatabase.getPlayerTag(senderUUID).thenCompose(tag -> {
 			if (!tag.equalsIgnoreCase("admin") && !tag.equalsIgnoreCase("staff")) {
 				ChatPlugin.sendCMSG(player, "chatp.invite.cant", "&cYou need to be admin or staff to invite");
@@ -63,7 +63,7 @@ public class Invite extends CommandManager {
 							"%player_name% Invited you to %group_name%\n&eClick this messaage to join"),
 					ChatPlugin.EVIRTUAL).thenAccept((joinMSG) -> {
 						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-							TextComponent msg = new TextComponent(ColorUtils.C(player, joinMSG));
+							final TextComponent msg = new TextComponent(ColorUtils.C(player, joinMSG));
 							msg.setColor(ChatColor.RED);
 							msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + group));
 							msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,

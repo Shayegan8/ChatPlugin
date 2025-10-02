@@ -17,12 +17,12 @@ import java.util.concurrent.TimeUnit;
 public class Placeholders extends PlaceholderExpansion {
 
 	private final Plugin plugin;
-	public static Map<UUID, String> cache_group = new ConcurrentHashMap<>();
-	public static Map<UUID, String> cache_tag = new ConcurrentHashMap<>();
+	public final static Map<UUID, String> cache_group = new ConcurrentHashMap<>();
+	public final static Map<UUID, String> cache_tag = new ConcurrentHashMap<>();
 
 	public Placeholders(Plugin plugin) {
 		this.plugin = plugin;
-		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+		final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 		scheduler.scheduleAtFixedRate(this::cleaner, 60, 60, TimeUnit.SECONDS);
 	}
 
@@ -49,7 +49,7 @@ public class Placeholders extends PlaceholderExpansion {
 	@SneakyThrows
 	@Override
 	public String onPlaceholderRequest(Player player, @NotNull String parms) {
-		UUID uuid = player.getUniqueId();
+		final UUID uuid = player.getUniqueId();
 		if (parms.equalsIgnoreCase("group")) {
 			if (cache_tag.get(uuid) == null)
 				updateGroup(uuid);

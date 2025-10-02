@@ -30,14 +30,14 @@ public class Staff extends CommandManager {
 			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
 			return;
 		}
-		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 		ChatPlugin.sendBMSG(sender, "chatp.staff.promoted", "&aPromoted");
 		MDatabase.setPlayerTag(argUUID, "staff");
 	}
 
 	private void player(CommandSender sender, String[] args) {
-		Player player = (Player) sender;
-		UUID uuid = player.getUniqueId();
+		final Player player = (Player) sender;
+		final UUID uuid = player.getUniqueId();
 		if (args.length != 1) {
 			ChatPlugin.sendBMSG(player, "chatp.staff.usage", getUsage());
 			return;
@@ -50,7 +50,7 @@ public class Staff extends CommandManager {
 			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckYourself", "&cYou are admin ;|");
 			return;
 		}
-		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 		MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
 			if (!tag.equalsIgnoreCase("admin")) {
 				ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckIt", "&cYou should be admin");

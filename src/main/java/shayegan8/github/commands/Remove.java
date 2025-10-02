@@ -36,8 +36,8 @@ public class Remove extends CommandManager {
 			ChatPlugin.sendCMSG(player, "chatp.remove.notFound", "&cCant find this player :(");
 			return;
 		}
-		UUID senderUUID = player.getUniqueId();
-		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		final UUID senderUUID = player.getUniqueId();
+		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 
 		MDatabase.getPlayerGroup(senderUUID).thenCombine(MDatabase.getPlayerGroup(argUUID), String::equals)
 				.thenCompose(bothInSameGroup -> {

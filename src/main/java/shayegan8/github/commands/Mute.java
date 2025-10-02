@@ -37,8 +37,8 @@ public class Mute extends CommandManager {
 			ChatPlugin.sendCMSG(player, "chatp.mute.cantPlayer", "&cCant find this player");
 			return;
 		}
-		UUID senderUUID = player.getUniqueId();
-		UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
+		final UUID senderUUID = player.getUniqueId();
+		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 
 		MDatabase.isPlayerInGroup(senderUUID)
 				.thenCombine(MDatabase.isPlayerInGroup(argUUID), (player1, player2) -> player1 && player2)

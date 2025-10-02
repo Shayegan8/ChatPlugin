@@ -11,7 +11,7 @@ import shayegan8.github.ChatPlugin;
 public class GuiListener implements Listener {
 
 	public void inv(InventoryDragEvent e) {
-		Player player = (Player) e.getWhoClicked();
+		final Player player = (Player) e.getWhoClicked();
 		if (player.getOpenInventory().getTopInventory().equals(ChatPlugin.iMute.getInv()))
 			e.setCancelled(true);
 	}

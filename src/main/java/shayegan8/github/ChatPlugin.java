@@ -49,9 +49,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,9 +84,9 @@ public final class ChatPlugin extends JavaPlugin {
 	private static File file2_;
 	public static FileConfiguration configuration;
 	public static FileConfiguration configuration_menu;
-	public static Map<String, CommandManager> commands = Map.of("group", new Group(), "help", new Help(), "invite",
-			new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(), "remove",
-			new Remove(), "staff", new Staff(), "menu", new CMenu());
+	public final static Map<String, CommandManager> commands = Map.of("group", new Group(), "help", new Help(),
+			"invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(),
+			"remove", new Remove(), "staff", new Staff(), "menu", new CMenu());
 	public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
 	public static Map<String, Object> entries;
 	public static MDatabase mDB;
@@ -178,10 +182,10 @@ public final class ChatPlugin extends JavaPlugin {
 
 	@SneakyThrows
 	public static ItemStack getSkull(String uri) {
-		ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-		SkullMeta meta = (SkullMeta) head.getItemMeta();
-		PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID(), "foo");
-		PlayerTextures textures = profile.getTextures();
+		final ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+		final SkullMeta meta = (SkullMeta) head.getItemMeta();
+		final PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID(), "foo");
+		final PlayerTextures textures = profile.getTextures();
 		textures.setSkin(URI.create(uri).toURL());
 		profile.setTextures(textures);
 		meta.setOwnerProfile(profile);
@@ -190,36 +194,20 @@ public final class ChatPlugin extends JavaPlugin {
 	}
 
 	public static ItemStack getSkullOfOwner(Player player) {
-		ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-		SkullMeta meta = (SkullMeta) head.getItemMeta();
+		final ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+		final SkullMeta meta = (SkullMeta) head.getItemMeta();
 		meta.setOwnerProfile(player.getPlayerProfile());
+		meta.setDisplayName(player.getName());
 		head.setItemMeta(meta);
 		return head;
 	}
 
 	public static void onPlayerRequest(Player player, Map<String, Entry> entries, Inventory inv) {
 		entries.entrySet().stream().forEach((entry) -> {
-			Entry value = entry.getValue();
-			ItemStack item = value.item();
+			final Entry value = entry.getValue();
+			final ItemStack item = value.item();
 			value.slots().forEach(slot -> {
-				ItemStack copy = item.clone();
-				ItemMeta meta = copy.getItemMeta();
-				meta.setDisplayName(ColorUtils.C(player, value.displayName()));
-				meta.setLore(
-						value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
-				copy.setItemMeta(meta);
-				inv.setItem(slot, copy);
-			});
-		});
-
-	}
-
-	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Inventory inv) {
-		entries.entrySet().stream().forEach((entry) -> {
-			Entry value = entry.getValue();
-			ItemStack item = value.item();
-			value.slots().forEach(slot -> {
-				ItemMeta meta = item.getItemMeta();
+				final ItemMeta meta = item.getItemMeta();
 				meta.setDisplayName(ColorUtils.C(player, value.displayName()));
 				meta.setLore(
 						value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
@@ -227,6 +215,34 @@ public final class ChatPlugin extends JavaPlugin {
 				inv.setItem(slot, item);
 			});
 		});
+
+	}
+
+	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Inventory inv) {
+		onPlayerRequest(player, entries, inv);
+		final List<ItemStack> items = Collections.unmodifiableList(Arrays.asList(inv.getContents()));
+		final Map<Integer, ItemStack> collecteds = new ConcurrentHashMap<Integer, ItemStack>();
+		final List<Integer> slots = new ArrayList<Integer>();
+		CompletableFuture.runAsync(() -> {
+			for (int slot = 0; slot < items.size(); slot++) {
+				if (items.get(slot) == null || items.get(slot).getType() == Material.AIR)
+					slots.add(slot);
+			}
+			MDatabase.getPlayerGroup(player.getUniqueId())
+					.thenCompose(userGroup -> MDatabase.getPlayersByGroup(userGroup)).thenAccept(playersUUIDs -> {
+						slots.stream().forEach(eachSlot -> {
+							playersUUIDs.stream().forEach(eachUUID -> {
+								Bukkit.getScheduler().runTask(getInstance(), () -> {
+									final Player playerWUUID = Bukkit.getPlayer(eachUUID);
+									if (playerWUUID == null)
+										return;
+									final ItemStack item = getSkullOfOwner(playerWUUID);
+									collecteds.put(eachSlot, item);
+								});
+							});
+						});
+					});
+		}, EVIRTUAL);
 	}
 
 	private void createConfig() {

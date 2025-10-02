@@ -31,7 +31,7 @@ public class Join extends CommandManager {
 			ChatPlugin.sendCMSG(player, "chatp.join.usage", getUsage());
 			return;
 		}
-		UUID senderUUID = player.getUniqueId();
+		final UUID senderUUID = player.getUniqueId();
 		MDatabase.isPlayerInvited(senderUUID).thenAccept(invited -> {
 			if (!invited)
 				ChatPlugin.sendCMSG(player, "chatp.mute.invitedFirst", "&eYou should be invited first");

@@ -21,73 +21,78 @@ import java.util.concurrent.CompletableFuture;
 @AllArgsConstructor
 public class Grouping implements Listener {
 
-    @EventHandler
-    public void onChat(AsyncPlayerChatEvent e) {
-        UUID uuid = e.getPlayer().getUniqueId();
+	@EventHandler
+	public void onChat(AsyncPlayerChatEvent e) {
+		final UUID uuid = e.getPlayer().getUniqueId();
 		if (Placeholders.cache_tag.get(uuid) == null)
 			Placeholders.updateGroup(uuid);
 		if (Placeholders.cache_tag.get(uuid) == null)
 			Placeholders.updateTag(uuid);
-        String msg = e.getMessage();
-        e.setCancelled(true);
-        Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
-            MDatabase.getPlayerGroup(eachPlayer.getUniqueId()).thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenComposeAsync((condition) -> {
-                if(condition) {
-                	System.out.println(1);
-                	String formatedMSG = ColorUtils.C(e.getPlayer(), ChatPlugin.configuration.getString("playerChat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
-                	System.out.println(2);
-                    String rp = formatedMSG.replace("{msg}", msg);
-                	System.out.println(3);
-                    return CompletableFuture.completedFuture(rp);
-                }
-                return null;
-            }).thenAccept((m) -> {
-                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> eachPlayer.sendMessage(m));
-                ChatPlugin.getInstance().getLogger().info(msg);
-            }).exceptionally((exp) -> {
-                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-            });
-        });
-    }
+		final String msg = e.getMessage();
+		e.setCancelled(true);
+		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
+			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
+					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase)
+					.thenComposeAsync((condition) -> {
+						if (condition) {
+							System.out.println(1);
+							final String formatedMSG = ColorUtils.C(e.getPlayer(), ChatPlugin.configuration
+									.getString("playerChat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
+							System.out.println(2);
+							final String rp = formatedMSG.replace("{msg}", msg);
+							System.out.println(3);
+							return CompletableFuture.completedFuture(rp);
+						}
+						return null;
+					}).thenAccept((m) -> {
+						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> eachPlayer.sendMessage(m));
+						ChatPlugin.getInstance().getLogger().info(msg);
+					}).exceptionally((exp) -> {
+						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+					});
+		});
+	}
 
-    @SneakyThrows
-    @EventHandler
-    public void onChat_(AsyncPlayerChatEvent e) {
-        Player player = e.getPlayer();
-        UUID uuid = e.getPlayer().getUniqueId();
-        MDatabase.isPlayerMuted(uuid).thenComposeAsync(condition -> {
-            if(condition)
-                return CompletableFuture.completedFuture(ColorUtils.C(player, ChatPlugin.configuration.getString("cantMSG", "You are muted")));
-            return CompletableFuture.completedFuture(null);
-        }).thenAccept(result -> {
-            if(result != null)
-                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> player.sendMessage(result));
-        });
-    }
+	@SneakyThrows
+	@EventHandler
+	public void onChat_(AsyncPlayerChatEvent e) {
+		final Player player = e.getPlayer();
+		final UUID uuid = e.getPlayer().getUniqueId();
+		MDatabase.isPlayerMuted(uuid).thenComposeAsync(condition -> {
+			if (condition)
+				return CompletableFuture.completedFuture(
+						ColorUtils.C(player, ChatPlugin.configuration.getString("cantMSG", "You are muted")));
+			return CompletableFuture.completedFuture(null);
+		}).thenAccept(result -> {
+			if (result != null)
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> player.sendMessage(result));
+		});
+	}
 
-    @EventHandler
-    public void onJoin(PlayerJoinEvent e) {
-        Player player = e.getPlayer();
-        UUID uuid = player.getUniqueId();
-        MDatabase.playerHasGroup(uuid).thenAccept(has -> {
-           if(has)
-               return;
-           Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-               MDatabase.setPlayerGroup(uuid, "none");
-               MDatabase.setPlayerTag(uuid, "none");
-               MDatabase.setPlayerInGroup(uuid, false);
-           });
-        });
-        MDatabase.getPlayerGroup(uuid).thenAccept(group -> Placeholders.cache_group.put(uuid, group)).exceptionally(exp -> {
-        			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-        		});
-        MDatabase.getPlayerTag(uuid).thenAccept(tag -> Placeholders.cache_tag.put(uuid, tag));
-    }
+	@EventHandler
+	public void onJoin(PlayerJoinEvent e) {
+		final Player player = e.getPlayer();
+		final UUID uuid = player.getUniqueId();
+		MDatabase.playerHasGroup(uuid).thenAccept(has -> {
+			if (has)
+				return;
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+				MDatabase.setPlayerGroup(uuid, "none");
+				MDatabase.setPlayerTag(uuid, "none");
+				MDatabase.setPlayerInGroup(uuid, false);
+			});
+		});
+		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Placeholders.cache_group.put(uuid, group))
+				.exceptionally(exp -> {
+					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+				});
+		MDatabase.getPlayerTag(uuid).thenAccept(tag -> Placeholders.cache_tag.put(uuid, tag));
+	}
 
-    @EventHandler
-    public void onLeft(PlayerQuitEvent e) {
-        UUID uuid = e.getPlayer().getUniqueId();
-        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> Placeholders.cache_group.remove(uuid));
-        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> Placeholders.cache_tag.remove(uuid));
-    }
+	@EventHandler
+	public void onLeft(PlayerQuitEvent e) {
+		final UUID uuid = e.getPlayer().getUniqueId();
+		Placeholders.cache_group.remove(uuid);
+		Placeholders.cache_tag.remove(uuid);
+	}
 }
