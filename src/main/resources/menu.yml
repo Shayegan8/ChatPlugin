@@ -7,7 +7,6 @@ gui:
          zadw:
             material: "BLACK_STAINED_GLASS_PANE"
             displayName: "&r"
-            state: "unmovable"
             amount: 1
             slots:
                - 1
@@ -27,10 +26,11 @@ gui:
                - 26
                - 27
                - 28
-               - 35
                - 34
+               - 35
                - 36
                - 37
+               - 43
                - 44
                - 52
                - 51
@@ -43,7 +43,6 @@ gui:
             material: "WHITE_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
-            state: "unmovable"
             slots:
                - 11
                - 12
@@ -64,24 +63,15 @@ gui:
             material: "BLUE_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
-            state: "unmovable"
             slots:
                - 0
                - 8
                - 53
                - 45
-         sher:
-            material: "BLACK_STAINED_GLASS_PANE"
-            displayName: '&9'
-            amount: 1
-            state: "unmovable"
-            slots:
-               - 43   
          d:
             material: "CAKE"
             displayName: "&a&l>&r &9Invite players"
             amount: 1
-            state: "unmovable"
             slots:
                - 21
             lore:
@@ -93,7 +83,6 @@ gui:
             material: "COOKIE"
             displayName: "&a&l>&r &9Available groups"
             amount: 1
-            state: "unmovable"
             slots:
                - 22
             lore:
@@ -106,7 +95,6 @@ gui:
             displayName: "&cDelete your group"
             texture: "https://textures.minecraft.net/texture/fca8d372f551a27e7d1bb5d51d0a69213d06d7d15be2fc657900ba4a54614600"
             amount: 1
-            state: "unmovable"
             slots:
                - 23
             lore:
@@ -117,21 +105,18 @@ gui:
             material: "MINECART"
             displayName: "&a&l> &eMute players"
             amount: 1
-            state: "unmovable"
             slots:
                - 30               
          b:
             material: "CHEST_MINECART"
             amount: 1
             displayName: "&a&l> &eGet help"
-            state: "unmovable"
             slots:
                - 31
          c:
             material: "TNT_MINECART"
             amount: 1
             displayName: "&cQuit"
-            state: "unmovable"
             slots:
                - 32
    mute:
@@ -143,7 +128,6 @@ gui:
             material: "BLACK_STAINED_GLASS_PANE"
             displayName: '&r'
             amount: 1
-            state: "unmovable"
             slots:
                - 0
                - 1
@@ -154,12 +138,14 @@ gui:
                - 6
                - 7
                - 8
+               - 9
                - 17
+               - 44
+               - 18
                - 26
                - 27
                - 35
                - 36
-               - 44
                - 45
                - 46
                - 47
@@ -169,4 +155,3 @@ gui:
                - 51
                - 52
                - 53
-               

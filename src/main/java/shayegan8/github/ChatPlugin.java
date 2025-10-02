@@ -32,12 +32,11 @@ import org.bukkit.profile.PlayerTextures;
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.Grouping;
+import shayegan8.github.events.GuiListener;
 import shayegan8.github.expansions.Placeholders;
 import shayegan8.github.gui.Entry;
-import shayegan8.github.gui.GuiListener;
 import shayegan8.github.gui.IMenu;
 import shayegan8.github.gui.IMute;
-import shayegan8.github.gui.ItemSave;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -50,12 +49,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -201,74 +197,36 @@ public final class ChatPlugin extends JavaPlugin {
 		return head;
 	}
 
-	public static void onPlayerRequest(Player player, Map<String, Entry> entries, Map<String, ItemSave> items) {
-		CompletableFuture.runAsync(() -> {
-			entries.entrySet().stream().forEach((entry) -> {
-				String key = entry.getKey();
-				String[] spKey = key.split("\\.");
-				System.out.println(key);
-				Entry value = entry.getValue();
-				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-					ItemStack item = items.get(spKey[spKey.length - 1]).item();
-					ItemMeta meta = item.getItemMeta();
-					meta.setDisplayName(ColorUtils.C(player, value.displayName()));
-					meta.setLore(
-							value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
-					item.setItemMeta(meta);
-					value.slots().forEach(slot -> {
-						System.out.println(slot + " " + value.materialName());
-						iMenu.getInv().setItem(slot, item);
-					});
-				});
+	public static void onPlayerRequest(Player player, Map<String, Entry> entries, Inventory inv) {
+		entries.entrySet().stream().forEach((entry) -> {
+			Entry value = entry.getValue();
+			ItemStack item = value.item();
+			value.slots().forEach(slot -> {
+				ItemStack copy = item.clone();
+				ItemMeta meta = copy.getItemMeta();
+				meta.setDisplayName(ColorUtils.C(player, value.displayName()));
+				meta.setLore(
+						value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
+				copy.setItemMeta(meta);
+				inv.setItem(slot, copy);
 			});
-		}, EVIRTUAL);
+		});
+
 	}
 
-	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Map<String, ItemSave> items,
-			Inventory inv) {
-		CompletableFuture.runAsync(() -> {
-			entries.entrySet().stream().forEach((entry) -> {
-				String key = entry.getKey();
-				String[] spKey = key.split("\\.");
-				Entry value = entry.getValue();
-				
-				List<Integer> slots = new ArrayList<Integer>();
-				ItemStack[] avItems = inv.getContents();
-				for (int slot = 0; slot < avItems.length; slot++)
-					if (avItems == null || avItems[slot].getType() == Material.AIR)
-						slots.add(slot);
-				
-				ItemStack item = items.get(spKey[spKey.length - 1]).item();
-				Bukkit.getScheduler().runTask(getInstance(), () -> {
-					ItemMeta meta = item.getItemMeta();
-					meta.setDisplayName(ColorUtils.C(player, value.displayName()));
-					CompletableFuture.supplyAsync(() -> value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList())).thenAccept(lore -> {
-						Bukkit.getScheduler().runTask(getInstance(), () -> {
-							meta.setLore(lore);
-						});
-					});
-					item.setItemMeta(meta);
-					value.slots().forEach(slot -> {
-						iMenu.getInv().setItem(slot, item);
-					});
-				});			
-				
-				MDatabase.getPlayerGroup(player.getUniqueId()).thenCompose(group -> {
-					if (!group.equalsIgnoreCase("none"))
-						return MDatabase.getPlayersByGroup(group);
-					return CompletableFuture.completedStage(null);
-				}).thenAcceptAsync(playerList -> {
-					playerList.stream().forEach(uuid -> {
-						slots.forEach(slot -> {
-							Bukkit.getScheduler().runTask(getInstance(), () -> {
-								ItemStack head = getSkullOfOwner(Bukkit.getPlayer(uuid));
-								inv.setItem(slot, head);
-							});
-						});
-					});
-				});
+	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Inventory inv) {
+		entries.entrySet().stream().forEach((entry) -> {
+			Entry value = entry.getValue();
+			ItemStack item = value.item();
+			value.slots().forEach(slot -> {
+				ItemMeta meta = item.getItemMeta();
+				meta.setDisplayName(ColorUtils.C(player, value.displayName()));
+				meta.setLore(
+						value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
+				item.setItemMeta(meta);
+				inv.setItem(slot, item);
 			});
-		}, EVIRTUAL);
+		});
 	}
 
 	private void createConfig() {
@@ -299,5 +257,5 @@ public final class ChatPlugin extends JavaPlugin {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 }

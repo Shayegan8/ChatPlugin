@@ -2,6 +2,8 @@ package shayegan8.github.gui;
 
 import java.util.List;
 
-public record Entry(String materialName, String state, String displayName, int amount, List<Integer> slots,
+import org.bukkit.inventory.ItemStack;
+
+public record Entry(String materialName, ItemStack item, String displayName, int amount, List<Integer> slots,
 		List<String> lore) {
 }
