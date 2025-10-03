@@ -24,11 +24,11 @@ public class Quit extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player player)) {
-			ChatPlugin.sendBMSG(sender, "chatp.quit.notPlayer", "&cYou should be a player");
+			ChatPlugin.sendABMSG(sender, "chatp.quit.notPlayer", "&cYou should be a player");
 			return;
 		}
 		if (args.length != 0) {
-			ChatPlugin.sendCMSG(player, "chatp.quit.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.quit.usage", getUsage());
 			return;
 		}
 		final UUID senderUUID = player.getUniqueId();
@@ -36,11 +36,9 @@ public class Quit extends CommandManager {
 			if (!isInGroup)
 				ChatPlugin.sendCMSG(player, "chatp.quit.notGroup", "&cYou are not in any group");
 			else {
-				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-					MDatabase.setPlayerTag(senderUUID, "none");
-					MDatabase.setPlayerGroup(senderUUID, "none");
-					MDatabase.setPlayerInGroup(senderUUID, false);
-				});
+				MDatabase.setPlayerTag(senderUUID, "none");
+				MDatabase.setPlayerGroup(senderUUID, "none");
+				MDatabase.setPlayerInGroup(senderUUID, false);
 				ChatPlugin.sendCMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
 			}
 		}).exceptionallyAsync(exp -> {

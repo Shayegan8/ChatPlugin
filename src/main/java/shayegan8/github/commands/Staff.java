@@ -23,15 +23,15 @@ public class Staff extends CommandManager {
 
 	private void console(CommandSender sender, String[] args) {
 		if (args.length != 1) {
-			ChatPlugin.sendBMSG(sender, "chatp.staff.usage", getUsage());
+			ChatPlugin.sendABMSG(sender, "chatp.staff.usage", getUsage());
 			return;
 		}
 		if (Bukkit.getPlayer(args[0]) == null) {
-			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
+			ChatPlugin.sendABMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
 			return;
 		}
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
-		ChatPlugin.sendBMSG(sender, "chatp.staff.promoted", "&aPromoted");
+		ChatPlugin.sendABMSG(sender, "chatp.staff.promoted", "&aPromoted");
 		MDatabase.setPlayerTag(argUUID, "staff");
 	}
 
@@ -39,24 +39,24 @@ public class Staff extends CommandManager {
 		final Player player = (Player) sender;
 		final UUID uuid = player.getUniqueId();
 		if (args.length != 1) {
-			ChatPlugin.sendBMSG(player, "chatp.staff.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.staff.usage", getUsage());
 			return;
 		}
 		if (Bukkit.getPlayer(args[0]) == null) {
-			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFind", "&cCant find this player");
+			ChatPlugin.sendACMSG(player, "chatp.staff.cantFind", "&cCant find this player");
 			return;
 		}
 		if (args[0].equals(sender.getName())) {
-			ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckYourself", "&cYou are admin ;|");
+			ChatPlugin.sendACMSG(player, "chatp.staff.cantFuckYourself", "&cYou are admin ;|");
 			return;
 		}
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 		MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
 			if (!tag.equalsIgnoreCase("admin")) {
-				ChatPlugin.sendBMSG(sender, "chatp.staff.cantFuckIt", "&cYou should be admin");
+				ChatPlugin.sendCMSG(player, "chatp.staff.cantFuckIt", "&cYou should be admin");
 				return;
 			}
-			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> MDatabase.setPlayerTag(argUUID, "staff"));
+			MDatabase.setPlayerTag(argUUID, "staff");
 			ChatPlugin.sendCMSG(player, "chatp.staff.promoted", "&e%player_name% &aSuccessfully promoted");
 		}).exceptionallyAsync(exp -> {
 			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));

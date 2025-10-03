@@ -25,16 +25,15 @@ public class Mute extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player player)) {
-			ChatPlugin.sendBMSG(sender, "chatp.mute.notPlayer", "&cYou should be a player");
+			ChatPlugin.sendABMSG(sender, "chatp.mute.notPlayer", "&cYou should be a player");
 			return;
 		}
 		if (args.length != 1) {
-			ChatPlugin.sendCMSG(player, "chatp.mute.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.mute.usage", getUsage());
 			return;
 		}
 		if (Bukkit.getPlayer(args[0]) == null) {
-
-			ChatPlugin.sendCMSG(player, "chatp.mute.cantPlayer", "&cCant find this player");
+			ChatPlugin.sendACMSG(player, "chatp.mute.cantPlayer", "&cCant find this player");
 			return;
 		}
 		final UUID senderUUID = player.getUniqueId();
@@ -57,8 +56,7 @@ public class Mute extends CommandManager {
 							ChatPlugin.sendCMSG(player, "chatp.mute.cantFuckYourself", "&cYou cant mute yourself");
 							return;
 						}
-						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-								() -> MDatabase.setPlayerMuted(argUUID, true));
+						MDatabase.setPlayerMuted(argUUID, true);
 						ChatPlugin.sendCMSG(player, "chatp.mute.muted", "&ePlayer muted");
 					}
 				}).exceptionallyAsync(exp -> {

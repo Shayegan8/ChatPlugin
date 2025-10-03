@@ -24,11 +24,11 @@ public class Join extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player player)) {
-			ChatPlugin.sendBMSG(sender, "chatp.join.notPlayer", "&cYou should be a player");
+			ChatPlugin.sendABMSG(sender, "chatp.join.notPlayer", "&cYou should be a player");
 			return;
 		}
 		if (args.length != 1) {
-			ChatPlugin.sendCMSG(player, "chatp.join.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.join.usage", getUsage());
 			return;
 		}
 		final UUID senderUUID = player.getUniqueId();
@@ -36,10 +36,8 @@ public class Join extends CommandManager {
 			if (!invited)
 				ChatPlugin.sendCMSG(player, "chatp.mute.invitedFirst", "&eYou should be invited first");
 			else {
-				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-					MDatabase.setPlayerGroup(senderUUID, args[0]);
-					MDatabase.setPlayerInGroup(senderUUID, true);
-				});
+				MDatabase.setPlayerGroup(senderUUID, args[0]);
+				MDatabase.setPlayerInGroup(senderUUID, true);
 				ChatPlugin.sendCMSG(player, "chatp.join.invited", "&eYou are now in %chatp_group% group");
 			}
 		}).exceptionallyAsync(exp -> {

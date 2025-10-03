@@ -15,7 +15,7 @@ public class CMenu extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player player)) {
-			ChatPlugin.sendBMSG(sender, "chatp.cmenu.notPlayer", "&cYou should be a player");
+			ChatPlugin.sendABMSG(sender, "chatp.cmenu.notPlayer", "&cYou should be a player");
 			return;
 		}
 		ChatPlugin.onPlayerRequest(player, ChatPlugin.iMenu.getEntries(), ChatPlugin.iMenu.getInv());

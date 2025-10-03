@@ -76,11 +76,9 @@ public class Grouping implements Listener {
 		MDatabase.playerHasGroup(uuid).thenAccept(has -> {
 			if (has)
 				return;
-			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-				MDatabase.setPlayerGroup(uuid, "none");
-				MDatabase.setPlayerTag(uuid, "none");
-				MDatabase.setPlayerInGroup(uuid, false);
-			});
+			MDatabase.setPlayerGroup(uuid, "none");
+			MDatabase.setPlayerTag(uuid, "none");
+			MDatabase.setPlayerInGroup(uuid, false);
 		});
 		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Placeholders.cache_group.put(uuid, group))
 				.exceptionally(exp -> {

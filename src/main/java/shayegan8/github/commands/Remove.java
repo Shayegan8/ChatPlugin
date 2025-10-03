@@ -25,15 +25,15 @@ public class Remove extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player player)) {
-			ChatPlugin.sendBMSG(sender, "chatp.remove.notPlayer", "&cYou should be a player");
+			ChatPlugin.sendABMSG(sender, "chatp.remove.notPlayer", "&cYou should be a player");
 			return;
 		}
 		if (args.length != 1) {
-			ChatPlugin.sendCMSG(player, "chatp.remove.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.remove.usage", getUsage());
 			return;
 		}
 		if (Bukkit.getPlayer(args[0]) == null) {
-			ChatPlugin.sendCMSG(player, "chatp.remove.notFound", "&cCant find this player :(");
+			ChatPlugin.sendACMSG(player, "chatp.remove.notFound", "&cCant find this player :(");
 			return;
 		}
 		final UUID senderUUID = player.getUniqueId();
@@ -57,11 +57,9 @@ public class Remove extends CommandManager {
 					return MDatabase.getPlayerTag(senderUUID);
 				}).thenAccept(tag -> {
 					if (tag.equals("admin") || tag.equals("staff")) {
-						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-							MDatabase.setPlayerGroup(argUUID, "none");
-							MDatabase.setPlayerTag(argUUID, "none");
-							MDatabase.setPlayerInGroup(argUUID, false);
-						});
+						MDatabase.setPlayerGroup(argUUID, "none");
+						MDatabase.setPlayerTag(argUUID, "none");
+						MDatabase.setPlayerInGroup(argUUID, false);
 						ChatPlugin.sendCMSG(player, "chatp.remove.removed", "%player_name% &asuccessfully removed");
 					} else
 						ChatPlugin.sendCMSG(player, "chatp.remove.cant", "&cYou are not admin or staff");

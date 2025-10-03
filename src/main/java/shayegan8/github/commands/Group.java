@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
+import shayegan8.github.expansions.Placeholders;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,11 +30,11 @@ public class Group extends CommandManager {
 			switch (args[0]) {
 			case "create":
 				MDatabase.createGroup(args[1]);
-				ChatPlugin.sendBMSG(sender, "chatp.group.created", "&eGroup created");
+				ChatPlugin.sendABMSG(sender, "chatp.group.created", "&eGroup created");
 				break;
 			case "delete":
 				MDatabase.deleteGroup(args[1]);
-				ChatPlugin.sendBMSG(sender, "chatp.group.deleted", "&eGroup deleted");
+				ChatPlugin.sendABMSG(sender, "chatp.group.deleted", "&eGroup deleted");
 				break;
 			}
 		} else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
@@ -45,7 +46,7 @@ public class Group extends CommandManager {
 						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
 		} else
-			ChatPlugin.sendBMSG(sender, "chatp.group.usage", getUsage());
+			ChatPlugin.sendABMSG(sender, "chatp.group.usage", getUsage());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -60,12 +61,12 @@ public class Group extends CommandManager {
 						ChatPlugin.sendCMSG(player, "chatp.group.cantCreate", "&cYou are already in a group");
 						return;
 					}
-					Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-						MDatabase.createGroup(args[1]);
-						MDatabase.setPlayerInGroup(uuid, true);
-						MDatabase.setPlayerTag(uuid, "admin");
-						MDatabase.setPlayerGroup(uuid, args[1]);
-					});
+					MDatabase.createGroup(args[1]);
+					MDatabase.setPlayerInGroup(uuid, true);
+					MDatabase.setPlayerTag(uuid, "admin");
+					MDatabase.setPlayerGroup(uuid, args[1]);
+					Placeholders.updateGroup(uuid);
+					Placeholders.updateTag(uuid);
 					ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");
 				});
 				break;
@@ -86,12 +87,12 @@ public class Group extends CommandManager {
 							ChatPlugin.sendCMSG(player, "chatp.group.admin", "&eYou are not admin");
 							return;
 						}
-						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-							MDatabase.deleteGroup(args[1]);
-							MDatabase.setPlayerInGroup(uuid, false);
-							MDatabase.setPlayerTag(uuid, "none");
-							MDatabase.setPlayerGroup(uuid, "none");
-						});
+						Placeholders.updateGroup(uuid);
+						Placeholders.updateTag(uuid);
+						MDatabase.deleteGroup(args[1]);
+						MDatabase.setPlayerInGroup(uuid, false);
+						MDatabase.setPlayerTag(uuid, "none");
+						MDatabase.setPlayerGroup(uuid, "none");
 					});
 
 				});
@@ -109,7 +110,7 @@ public class Group extends CommandManager {
 						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
 		} else
-			ChatPlugin.sendCMSG(player, "chatp.group.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.group.usage", getUsage());
 	}
 
 	@Override

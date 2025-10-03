@@ -33,19 +33,19 @@ public class Invite extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (!(sender instanceof Player player)) {
-			ChatPlugin.sendBMSG(sender, "chatp.invited.notPlayer", "&cYou should be a player");
+			ChatPlugin.sendABMSG(sender, "chatp.invited.notPlayer", "&cYou should be a player");
 			return;
 		}
 		if (args.length != 1) {
-			ChatPlugin.sendCMSG(player, "chatp.invited.usage", getUsage());
+			ChatPlugin.sendACMSG(player, "chatp.invited.usage", getUsage());
 			return;
 		}
 		if (sender.getName().equalsIgnoreCase(args[0])) {
-			ChatPlugin.sendCMSG(player, "chatp.invited.cantFuckYourself", "&cYou cant invite yourself");
+			ChatPlugin.sendACMSG(player, "chatp.invited.cantFuckYourself", "&cYou cant invite yourself");
 			return;
 		}
 		if (Bukkit.getPlayer(args[0]) == null) {
-			ChatPlugin.sendCMSG(player, "chatp.invite.cantFind", "&cCant find this player");
+			ChatPlugin.sendACMSG(player, "chatp.invite.cantFind", "&cCant find this player");
 			return;
 		}
 		final UUID senderUUID = player.getUniqueId();

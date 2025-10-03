@@ -9,6 +9,7 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -26,7 +27,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label,
 			String[] args) {
 		if (args.length == 0) {
-			ChatPlugin.sendBMSG(sender, "chatp.usage", "&c/chatp help to get instruction for all commands");
+			ChatPlugin.sendABMSG(sender, "chatp.usage", "&c/chatp help to get instruction for all commands");
 			return true;
 		}
 
@@ -45,7 +46,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
 				});
 
 		if (!sender.hasPermission(cmd_.getPermission())) {
-			ChatPlugin.sendBMSG(sender, "chatp.permissionMSG", "&cYou dont have a permission!");
+			ChatPlugin.sendABMSG(sender, "chatp.permissionMSG", "&cYou dont have a permission!");
 			return true;
 		}
 
@@ -71,7 +72,7 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
 				.collect(Collectors.toList());
 		default -> Stream.of("no player found").collect(Collectors.toList());
 		};
-		default -> Stream.of("remove", "reload", "quit", "mute", "join", "invite", "help", "group", "friends")
+		default -> Stream.of("remove", "reload", "quit", "mute", "join", "invite", "help", "group", "friends", "menu")
 				.filter((x) -> x.startsWith(firstArgument)).collect(Collectors.toList());
 		};
 	}

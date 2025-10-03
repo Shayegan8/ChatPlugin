@@ -109,6 +109,14 @@ public final class ChatPlugin extends JavaPlugin {
 				ColorUtils.C(player, (String) entries.getOrDefault(path, msg)))));
 	}
 
+	public static void sendABMSG(CommandSender sender, String path, String msg) {
+		sender.sendMessage(ColorUtils.B((String) ChatPlugin.entries.getOrDefault(path, msg)));
+	}
+
+	public static void sendACMSG(Player player, String path, String msg) {
+		player.sendMessage(ColorUtils.C(player, (String) ChatPlugin.entries.getOrDefault(path, msg)));
+	}
+
 	public static Map<String, Object> sectionSaver() {
 		ConfigurationSection section = configuration.getConfigurationSection("chatp");
 		entries = new ConcurrentHashMap<String, Object>();
