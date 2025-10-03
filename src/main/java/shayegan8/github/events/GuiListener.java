@@ -4,27 +4,30 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
 
 import shayegan8.github.ChatPlugin;
 
 public class GuiListener implements Listener {
 
-	public void inv(InventoryDragEvent e) {
-		final Player player = (Player) e.getWhoClicked();
-		if (player.getOpenInventory().getTopInventory().equals(ChatPlugin.iMute.getInv()))
-			e.setCancelled(true);
-	}
-
 	@EventHandler
 	public void pages(InventoryClickEvent e) {
-		ChatPlugin.iMenu.getEntries().entrySet().stream().forEach(entry -> {
-			switch (entry.getKey()) {
-			case "chatp.mute.list.a":
-
-				break;
-			}
-		});
+		final Player player = (Player) e.getWhoClicked();
+		if (!player.getOpenInventory().getTopInventory().equals(ChatPlugin.iMenu.getInv()))
+			return;
+		e.setCancelled(true);
+		if (e.isRightClick())
+			ChatPlugin.iMenu.getEntries().keySet().stream()
+					.filter(key -> ChatPlugin.iMenu.getEntries().get(key).item().equals(e.getCurrentItem()))
+					.forEach(key -> {
+						System.out.println(key);
+						switch (key) {
+						case "gui.menu.list.a":
+							ChatPlugin.onPlayerMuteWithSkulls(player, ChatPlugin.iMute.getEntries(),
+									ChatPlugin.iMute.getInv());
+							player.openInventory(ChatPlugin.iMute.getInv());
+							break;
+						}
+					});
 	}
 
 }

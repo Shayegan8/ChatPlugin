@@ -59,6 +59,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
@@ -218,30 +219,78 @@ public final class ChatPlugin extends JavaPlugin {
 
 	}
 
+	/**
+	 * {pageNumber, items(the slot, and player name actually)}
+	 */
+	public static final Map<Integer, Map<Integer, String>> storedPages = new ConcurrentHashMap<Integer, Map<Integer, String>>();
+	public static final Map<Integer, Inventory> storedInventories = new ConcurrentHashMap<Integer, Inventory>();
+
+	// since the groups sizes and slots are fixed length this can be fast, TODO:
+	// save this pages when players get added in group
 	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Inventory inv) {
 		onPlayerRequest(player, entries, inv);
 		final List<ItemStack> items = Collections.unmodifiableList(Arrays.asList(inv.getContents()));
-		final Map<Integer, ItemStack> collecteds = new ConcurrentHashMap<Integer, ItemStack>();
 		final List<Integer> slots = new ArrayList<Integer>();
+		AtomicInteger pageNumber = new AtomicInteger(0);
 		CompletableFuture.runAsync(() -> {
-			for (int slot = 0; slot < items.size(); slot++) {
-				if (items.get(slot) == null || items.get(slot).getType() == Material.AIR)
-					slots.add(slot);
-			}
+			if (slots.isEmpty())
+				for (int slot = 0; slot < items.size(); slot++)
+					if (items.get(slot) == null || items.get(slot).getType() == Material.AIR)
+						slots.add(slot);
+
 			MDatabase.getPlayerGroup(player.getUniqueId())
-					.thenCompose(userGroup -> MDatabase.getPlayersByGroup(userGroup)).thenAccept(playersUUIDs -> {
-						slots.stream().forEach(eachSlot -> {
-							playersUUIDs.stream().forEach(eachUUID -> {
-								Bukkit.getScheduler().runTask(getInstance(), () -> {
-									final Player playerWUUID = Bukkit.getPlayer(eachUUID);
-									if (playerWUUID == null)
-										return;
-									final ItemStack item = getSkullOfOwner(playerWUUID);
-									collecteds.put(eachSlot, item);
-								});
+					.thenCompose(userGroup -> MDatabase.getPlayersByGroup(userGroup)).thenAcceptAsync(playersUUIDs -> {
+						Map<Integer, String> collecteds = new ConcurrentHashMap<Integer, String>();
+						final Map<Integer, String> eachCollected = new ConcurrentHashMap<Integer, String>();
+						playersUUIDs.forEach(eachUUID -> {
+							final Player playerWUUID = Bukkit.getPlayer(eachUUID);
+							if (playerWUUID == null)
+								return;
+							slots.stream().forEach(eachSlot -> {
+								if (!eachCollected.containsValue(playerWUUID.getName()))
+									eachCollected.put(eachSlot, playerWUUID.getName());
 							});
+
+						});
+						final int neededPlayers = eachCollected.size();
+						final int neededSlots = slots.size();
+						int calculateArea = neededPlayers - neededSlots;
+						outer: while (true) {
+							if (calculateArea > neededSlots) {
+								slots.stream().forEach(eachSlot -> {
+									for (int from = 0; from <= neededSlots; from++) {
+										String playerName = Bukkit.getPlayer(eachCollected.get(from)).getName();
+										if (eachCollected.containsValue(playerName)) {
+											while (eachCollected.values().remove(playerName))
+												;
+											collecteds.put(eachSlot, playerName);
+										}
+									}
+								});
+								calculateArea -= neededSlots;
+								storedInventories.put(pageNumber.get(),
+										Bukkit.createInventory(null, configuration_menu.getInt("gui.mute.size", 54)));
+								storedPages.put(pageNumber.getAndIncrement(), collecteds);
+								continue outer;
+							} else {
+								eachCollected.forEach((slot, playerName) -> collecteds.put(slot, playerName));
+								storedInventories.put(pageNumber.get(),
+										Bukkit.createInventory(null, configuration_menu.getInt("gui.mute.size", 54)));
+								storedPages.put(pageNumber.getAndIncrement(), collecteds);
+								break outer;
+							}
+						}
+					});
+			Bukkit.getScheduler().runTask(getInstance(), () -> {
+				storedPages.entrySet().forEach(entry -> {
+					storedInventories.forEach((page, inventory) -> {
+						entry.getValue().forEach((slot, playerName) -> {
+							final ItemStack item = getSkullOfOwner(Bukkit.getPlayer(playerName));
+							inventory.setItem(slot, item);
 						});
 					});
+				});
+			});
 		}, EVIRTUAL);
 	}
 

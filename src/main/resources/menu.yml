@@ -155,3 +155,10 @@ gui:
                - 51
                - 52
                - 53
+         next:
+            material: "PLAYER_HEAD"
+            displayName: "&cNext page"
+            texture: ""
+            amount: 1
+            slots:
+               - 43
