@@ -23,35 +23,9 @@ public class GuiListener implements Listener {
 						switch (key) {
 						case "gui.menu.list.a":
 							ChatPlugin.onPlayerMute(player);
-							player.openInventory(ChatPlugin.STORED_INVS.get(0));
+							System.out.println("3");
 							break;
 						}
 					});
 	}
-
-	@EventHandler
-	public void onMute(InventoryClickEvent e) {
-		final Player player = (Player) e.getWhoClicked();
-		if (!player.getOpenInventory().getTopInventory().equals(ChatPlugin.STORED_INVS.get(0)))
-			return;
-		e.setCancelled(true);
-		if (e.isRightClick())
-			ChatPlugin.iMute.getEntries().keySet().stream()
-					.filter(key -> ChatPlugin.iMute.getEntries().get(key).item().equals(e.getCurrentItem()))
-					.forEach(key -> {
-						switch (key) {
-						case "gui.mute.list.next":
-							ChatPlugin.STORED_INVS.forEach((slot, inv) -> {
-								if (ChatPlugin.STORED_INVS.get(slot++) == null) {
-									player.closeInventory();
-									ChatPlugin.sendCMSG(player, "chatp.gmute.notFound", "&cNo more page is valid");
-									return;
-								}
-								player.openInventory(ChatPlugin.STORED_INVS.get(slot++));
-							});
-							break;
-						}
-					});
-	}
-
 }

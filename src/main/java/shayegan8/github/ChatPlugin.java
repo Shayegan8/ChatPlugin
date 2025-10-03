@@ -52,8 +52,10 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -228,48 +230,90 @@ public final class ChatPlugin extends JavaPlugin {
 	/**
 	 * {pageNumber, items(the slot, and player name actually)}
 	 */
-	public static final Map<Integer, Inventory> STORED_INVS = new ConcurrentHashMap<Integer, Inventory>();
+	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Inventory, Integer>> STORED_INVS = new ConcurrentHashMap<UUID, ConcurrentHashMap<Inventory, Integer>>();
 
-	private static void onPlayerMuteRepeat(int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
-			List<Integer> emptySlots, AtomicInteger pageNumber) {
+	private static void onPlayerMuteRepeat(UUID playerUUID_, int checkingArea, int emptySlotsSize,
+			Stack<UUID> cloneStack, List<Integer> emptySlots, AtomicInteger pageNumber,
+			CompletableFuture<Inventory> callback) {
+		ConcurrentHashMap<Inventory, Integer> pages = new ConcurrentHashMap<Inventory, Integer>();
+		Inventory firstInventory;
+		System.out.println("variables out of scope");
 		if (checkingArea < emptySlotsSize) {
-			
+			System.out.println("first condition");
 			Inventory inventory = Bukkit.createInventory(null, iMute.getSize());
+			CompletableFuture.runAsync(
+					() -> onPlayerRequest(Bukkit.getPlayer(playerUUID_), iMute.getEntries(), inventory), EVIRTUAL);
+			System.out.println("success");
 			outer: for (UUID playerUUID : cloneStack.reversed())
 				for (int emptySlot : emptySlots) {
 					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
-					inventory.setItem(emptySlot, playerHead);
+					System.out.println("running inv task");
+					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, playerHead));
 					continue outer;
 				}
-			STORED_INVS.put(pageNumber.getAndIncrement(), inventory);
+			System.out.println("putting");
+			pages.put(inventory, pageNumber.get());
+			System.out.println("putting 2");
+			STORED_INVS.put(playerUUID_, pages);
+			if (pageNumber.get() == 0) {
+				System.out.println("yeaaaa");
+				firstInventory = inventory;
+				System.out.println("completing");
+				callback.complete(firstInventory);
+			}
 		} else { // checkingArea >= emptySlotsSize
+			System.out.println("second condition");
 			Inventory inventory = Bukkit.createInventory(null, iMute.getSize());
+			CompletableFuture.runAsync(
+					() -> onPlayerRequest(Bukkit.getPlayer(playerUUID_), iMute.getEntries(), inventory), EVIRTUAL);
 			outer: for (UUID playerUUID : cloneStack)
 				for (int emptySlot : emptySlots) {
 					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
-					inventory.setItem(emptySlot, playerHead);
+					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, playerHead));
 					continue outer;
 				}
 			for (int remove = 1; remove < emptySlotsSize; remove++)
 				cloneStack.pop();
 			checkingArea = cloneStack.size() - emptySlotsSize;
-			STORED_INVS.put(pageNumber.getAndIncrement(), inventory);
-			onPlayerMuteRepeat(checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber);
+			if (pageNumber.get() == 0)
+				firstInventory = inventory;
+			pages.put(inventory, pageNumber.getAndIncrement());
+			onPlayerMuteRepeat(playerUUID_, checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber, callback);
 		}
 	}
 
+	private static final CompletableFuture<Inventory> COMPLETE_FIRST_INV = new CompletableFuture<Inventory>();
+
 	public static void onPlayerMute(Player player) {
-		if (!STORED_INVS.isEmpty())
+		Optional<ConcurrentHashMap<Inventory, Integer>> map = Optional
+				.ofNullable(STORED_INVS.get(player.getUniqueId()));
+		if (map.isPresent()) {
+			COMPLETE_FIRST_INV.thenAccept(firstInventory -> {
+				Bukkit.getScheduler().runTask(getInstance(), () -> player.openInventory(firstInventory));
+			});
 			return;
+		}
+		System.out.println("were going to fuckass");
 		List<Integer> emptySlots = iMute.getEmptySlots();
+		System.out.println(1);
 		int emptySlotsSize = emptySlots.size();
+		System.out.println(2);
 		AtomicInteger pageNumber = new AtomicInteger(0);
+		System.out.println(3);
 		MDatabase.getPlayerGroup(player.getUniqueId())
 				.thenCompose(playerGroup -> MDatabase.getPlayersByGroup(playerGroup)).thenAccept(playerUUIDStack -> {
 					Stack<UUID> cloneStack = playerUUIDStack;
+					System.out.println(4);
 					int playersGroupsSize = cloneStack.size();
 					int checkingArea = playersGroupsSize - emptySlotsSize;
-					onPlayerMuteRepeat(checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber);
+					System.out.println(6);
+					onPlayerMuteRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots,
+							pageNumber, COMPLETE_FIRST_INV);
+					COMPLETE_FIRST_INV.thenAccept(firstInventory -> {
+						System.out.println(7);
+						Bukkit.getScheduler().runTask(getInstance(), () -> player.openInventory(firstInventory));
+						System.out.println(8);
+					});
 				});
 	}
 
