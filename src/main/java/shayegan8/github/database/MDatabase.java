@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -60,9 +61,9 @@ public class MDatabase {
 	}
 
 	private static UUID convertToUUID(byte[] bytes) {
-		final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-		final long mostSignificantBits = buffer.getLong();
-		final long leastSignificantBits = buffer.getLong();
+		ByteBuffer buffer = ByteBuffer.wrap(bytes);
+		long mostSignificantBits = buffer.getLong();
+		long leastSignificantBits = buffer.getLong();
 		return new UUID(mostSignificantBits, leastSignificantBits);
 	}
 
@@ -144,20 +145,20 @@ public class MDatabase {
 		}, ChatPlugin.EVIRTUAL);
 	}
 
-	public static CompletableFuture<List<UUID>> getPlayersByGroup(String groupName) {
+	public static CompletableFuture<Stack<UUID>> getPlayersByGroup(String groupName) {
 		return CompletableFuture.supplyAsync(() -> {
-			final List<UUID> ls = new ArrayList<UUID>();
+			Stack<UUID> stack = new Stack<UUID>();
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("SELECT playerUUID FROM players WHERE groupName = ?");
 				pState.setString(1, groupName);
 				var query = pState.executeQuery();
 				while (query.next())
-					ls.add(convertToUUID(query.getBytes("playerUUID")));
+					stack.push(convertToUUID(query.getBytes("playerUUID")));
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-			return Collections.unmodifiableList(ls);
+			return stack;
 		}, ChatPlugin.EVIRTUAL);
 	}
 
@@ -313,7 +314,7 @@ public class MDatabase {
 	}
 
 	private static byte[] convertToBlob(UUID playerUUID) {
-		final ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
+		ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
 		buffer.putLong(playerUUID.getMostSignificantBits());
 		buffer.putLong(playerUUID.getLeastSignificantBits());
 		return buffer.array();

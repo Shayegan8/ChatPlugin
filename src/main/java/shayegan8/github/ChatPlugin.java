@@ -49,13 +49,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -222,76 +220,47 @@ public final class ChatPlugin extends JavaPlugin {
 	/**
 	 * {pageNumber, items(the slot, and player name actually)}
 	 */
-	public static final Map<Integer, Map<Integer, String>> storedPages = new ConcurrentHashMap<Integer, Map<Integer, String>>();
-	public static final Map<Integer, Inventory> storedInventories = new ConcurrentHashMap<Integer, Inventory>();
+	public static final Map<Integer, Inventory> STORED_INVS = new ConcurrentHashMap<Integer, Inventory>();
 
-	// since the groups sizes and slots are fixed length this can be fast, TODO:
-	// save this pages when players get added in group
-	public static void onPlayerMuteWithSkulls(Player player, Map<String, Entry> entries, Inventory inv) {
-		onPlayerRequest(player, entries, inv);
-		final List<ItemStack> items = Collections.unmodifiableList(Arrays.asList(inv.getContents()));
-		final List<Integer> slots = new ArrayList<Integer>();
+	private static void onPlayerMuteRepeat(int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
+			List<Integer> emptySlots, AtomicInteger pageNumber) {
+		if (checkingArea < emptySlotsSize) {
+			Inventory inventory = Bukkit.createInventory(null, iMute.getSize());
+			outer: for (UUID playerUUID : cloneStack.reversed())
+				for (int emptySlot : emptySlots) {
+					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
+					inventory.setItem(emptySlot, playerHead);
+					continue outer;
+				}
+			STORED_INVS.put(pageNumber.getAndIncrement(), inventory);
+		} else { // checkingArea >= emptySlotsSize
+			Inventory inventory = Bukkit.createInventory(null, iMute.getSize());
+			outer: for (UUID playerUUID : cloneStack)
+				for (int emptySlot : emptySlots) {
+					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
+					inventory.setItem(emptySlot, playerHead);
+					continue outer;
+				}
+			for (int remove = 1; remove < emptySlotsSize; remove++)
+				cloneStack.pop();
+			checkingArea = cloneStack.size() - emptySlotsSize;
+			STORED_INVS.put(pageNumber.getAndIncrement(), inventory);
+		}
+	}
+
+	public static void onPlayerMute(Player player) {
+		if (!STORED_INVS.isEmpty())
+			return;
+		List<Integer> emptySlots = iMute.getEmptySlots();
+		int emptySlotsSize = emptySlots.size();
 		AtomicInteger pageNumber = new AtomicInteger(0);
-		CompletableFuture.runAsync(() -> {
-			if (slots.isEmpty())
-				for (int slot = 0; slot < items.size(); slot++)
-					if (items.get(slot) == null || items.get(slot).getType() == Material.AIR)
-						slots.add(slot);
-
-			MDatabase.getPlayerGroup(player.getUniqueId())
-					.thenCompose(userGroup -> MDatabase.getPlayersByGroup(userGroup)).thenAcceptAsync(playersUUIDs -> {
-						Map<Integer, String> collecteds = new ConcurrentHashMap<Integer, String>();
-						final Map<Integer, String> eachCollected = new ConcurrentHashMap<Integer, String>();
-						playersUUIDs.forEach(eachUUID -> {
-							final Player playerWUUID = Bukkit.getPlayer(eachUUID);
-							if (playerWUUID == null)
-								return;
-							slots.stream().forEach(eachSlot -> {
-								if (!eachCollected.containsValue(playerWUUID.getName()))
-									eachCollected.put(eachSlot, playerWUUID.getName());
-							});
-
-						});
-						final int neededPlayers = eachCollected.size();
-						final int neededSlots = slots.size();
-						int calculateArea = neededPlayers - neededSlots;
-						outer: while (true) {
-							if (calculateArea > neededSlots) {
-								slots.stream().forEach(eachSlot -> {
-									for (int from = 0; from <= neededSlots; from++) {
-										String playerName = Bukkit.getPlayer(eachCollected.get(from)).getName();
-										if (eachCollected.containsValue(playerName)) {
-											while (eachCollected.values().remove(playerName))
-												;
-											collecteds.put(eachSlot, playerName);
-										}
-									}
-								});
-								calculateArea -= neededSlots;
-								storedInventories.put(pageNumber.get(),
-										Bukkit.createInventory(null, configuration_menu.getInt("gui.mute.size", 54)));
-								storedPages.put(pageNumber.getAndIncrement(), collecteds);
-								continue outer;
-							} else {
-								eachCollected.forEach((slot, playerName) -> collecteds.put(slot, playerName));
-								storedInventories.put(pageNumber.get(),
-										Bukkit.createInventory(null, configuration_menu.getInt("gui.mute.size", 54)));
-								storedPages.put(pageNumber.getAndIncrement(), collecteds);
-								break outer;
-							}
-						}
-					});
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				storedPages.entrySet().forEach(entry -> {
-					storedInventories.forEach((page, inventory) -> {
-						entry.getValue().forEach((slot, playerName) -> {
-							final ItemStack item = getSkullOfOwner(Bukkit.getPlayer(playerName));
-							inventory.setItem(slot, item);
-						});
-					});
+		MDatabase.getPlayerGroup(player.getUniqueId())
+				.thenCompose(playerGroup -> MDatabase.getPlayersByGroup(playerGroup)).thenAccept(playerUUIDStack -> {
+					Stack<UUID> cloneStack = playerUUIDStack;
+					int playersGroupsSize = cloneStack.size();
+					int checkingArea = playersGroupsSize - emptySlotsSize;
+					onPlayerMuteRepeat(checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber);
 				});
-			});
-		}, EVIRTUAL);
 	}
 
 	private void createConfig() {

@@ -19,9 +19,13 @@ public class IMute {
 
 	private final Inventory inv;
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
-
+	private final List<Integer> emptySlots;
+	private final int size;
+	
 	public IMute() {
-		inv = Bukkit.createInventory(null, ChatPlugin.configuration_menu.getInt("gui.mute.size", 54));
+		emptySlots = ChatPlugin.configuration_menu.getIntegerList("gui.mute.empties.slots");
+		size = ChatPlugin.configuration_menu.getInt("gui.mute.size", 54);
+		inv = Bukkit.createInventory(null, size);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.mute.list").getKeys(false).forEach(each -> {
 			final String newStr = "gui.mute.list." + each;
 			final ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
