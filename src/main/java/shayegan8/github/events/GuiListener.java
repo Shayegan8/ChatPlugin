@@ -23,7 +23,7 @@ public class GuiListener implements Listener {
 						switch (key) {
 						case "gui.menu.list.a":
 							ChatPlugin.onPlayerMute(player);
-							player.openInventory(ChatPlugin.iMute.getInv());
+							player.openInventory(ChatPlugin.STORED_INVS.get(0));
 							break;
 						}
 					});
@@ -32,7 +32,7 @@ public class GuiListener implements Listener {
 	@EventHandler
 	public void onMute(InventoryClickEvent e) {
 		final Player player = (Player) e.getWhoClicked();
-		if (!player.getOpenInventory().getTopInventory().equals(ChatPlugin.iMute.getInv()))
+		if (!player.getOpenInventory().getTopInventory().equals(ChatPlugin.STORED_INVS.get(0)))
 			return;
 		e.setCancelled(true);
 		if (e.isRightClick())
@@ -41,13 +41,13 @@ public class GuiListener implements Listener {
 					.forEach(key -> {
 						switch (key) {
 						case "gui.mute.list.next":
-							ChatPlugin.storedInventories.forEach((slot, inv) -> {
-								if (ChatPlugin.storedInventories.get(slot++) == null) {
+							ChatPlugin.STORED_INVS.forEach((slot, inv) -> {
+								if (ChatPlugin.STORED_INVS.get(slot++) == null) {
 									player.closeInventory();
 									ChatPlugin.sendCMSG(player, "chatp.gmute.notFound", "&cNo more page is valid");
 									return;
 								}
-								player.openInventory(ChatPlugin.storedInventories.get(slot++));
+								player.openInventory(ChatPlugin.STORED_INVS.get(slot++));
 							});
 							break;
 						}
