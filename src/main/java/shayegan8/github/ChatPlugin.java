@@ -233,6 +233,7 @@ public final class ChatPlugin extends JavaPlugin {
 	private static void onPlayerMuteRepeat(int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
 			List<Integer> emptySlots, AtomicInteger pageNumber) {
 		if (checkingArea < emptySlotsSize) {
+			
 			Inventory inventory = Bukkit.createInventory(null, iMute.getSize());
 			outer: for (UUID playerUUID : cloneStack.reversed())
 				for (int emptySlot : emptySlots) {
@@ -253,6 +254,7 @@ public final class ChatPlugin extends JavaPlugin {
 				cloneStack.pop();
 			checkingArea = cloneStack.size() - emptySlotsSize;
 			STORED_INVS.put(pageNumber.getAndIncrement(), inventory);
+			onPlayerMuteRepeat(checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber);
 		}
 	}
 
