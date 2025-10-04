@@ -5,27 +5,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
 @Getter
-public final class IMenu extends Gui {
+public final class IInvite extends Gui {
 
-	private final Inventory inv;
-	private final int size;
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
+	private final List<Integer> emptySlots;
+	private final int size;
 
-	public IMenu() {
-		size = ChatPlugin.configuration_menu.getInt("gui.menu.size", 54);
-		inv = Bukkit.createInventory(null, size);
-		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {
-			String newStr = "gui.menu.list." + each;
+	public IInvite() {
+		emptySlots = ChatPlugin.configuration_menu.getIntegerList("gui.invite.empties.slots");
+		size = ChatPlugin.configuration_menu.getInt("gui.invite.size", 54);
+		ChatPlugin.configuration_menu.getConfigurationSection("gui.invite.list").getKeys(false).forEach(each -> {
+			String newStr = "gui.invite.list." + each;
 			ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
 			String materialName = section.getString("material");
 			int amount = section.getInt("amount", 1);
@@ -44,6 +42,7 @@ public final class IMenu extends Gui {
 
 	@Override
 	public String getName() {
-		return "menu";
+		return "invite";
 	}
+
 }

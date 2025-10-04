@@ -17,18 +17,18 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@Getter
+@Getter //TODO: secure database
 public class MDatabase {
 
 	private Connection connection = null;
 	private final String name;
 
-	private final static String path = ChatPlugin.getPlugin(ChatPlugin.class).getDataFolder() + "/database";
+	private final static String PATH = ChatPlugin.getInstance().getDataFolder() + "/database";
 
 	public MDatabase(String name) {
 		this.name = name;
 		try {
-			final Path path_ = Paths.get(path);
+			final Path path_ = Paths.get(PATH);
 			if (Files.notExists(path_))
 				Files.createDirectory(path_);
 			switch (name) {

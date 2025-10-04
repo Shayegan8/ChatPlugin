@@ -71,14 +71,15 @@ public class Group extends CommandManager {
 				});
 				break;
 			case "delete":
-				MDatabase.isGroupExist(args[1]).thenAccept(check -> {
-					if (!check)
+				MDatabase.isGroupExist(args[1]).thenAccept(groupExist -> {
+					if (!groupExist) {
+						ChatPlugin.sendCMSG(player, "chatp.group.notExist", "&cThat group dosent exist");
 						return;
-					ChatPlugin.sendCMSG(player, "chatp.group.deleted", "&e%chatp_group% &chas been deleted");
-				}).thenAccept(kossher -> {
+					}
+					
 					MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
 						if (!check) {
-							ChatPlugin.sendCMSG(player, "chatp.group.notIn", "&eYou are not in group");
+							ChatPlugin.sendCMSG(player, "chatp.group.notIn", "&cYou are not in any group");
 							return CompletableFuture.completedFuture(null);
 						}
 						return MDatabase.getPlayerTag(uuid);
@@ -87,14 +88,14 @@ public class Group extends CommandManager {
 							ChatPlugin.sendCMSG(player, "chatp.group.admin", "&eYou are not admin");
 							return;
 						}
-						Placeholders.updateGroup(uuid);
-						Placeholders.updateTag(uuid);
 						MDatabase.deleteGroup(args[1]);
 						MDatabase.setPlayerInGroup(uuid, false);
 						MDatabase.setPlayerTag(uuid, "none");
 						MDatabase.setPlayerGroup(uuid, "none");
+						ChatPlugin.sendCMSG(player, "chatp.group.deleted", "&e%chatp_group% &chas been deleted");
+						Placeholders.updateGroup(uuid);
+						Placeholders.updateTag(uuid);
 					});
-
 				});
 				break;
 			}

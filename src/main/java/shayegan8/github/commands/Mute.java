@@ -40,7 +40,7 @@ public class Mute extends CommandManager {
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 
 		MDatabase.isPlayerInGroup(senderUUID)
-				.thenCombine(MDatabase.isPlayerInGroup(argUUID), (player1, player2) -> player1 && player2)
+				.thenCombine(MDatabase.isPlayerInGroup(argUUID), (player1, player2) -> player1.equals(player2))
 				.thenCompose(inGroup -> {
 					if (!inGroup) {
 						ChatPlugin.sendCMSG(player, "chatp.mute.notSame", "&cYou or that player should be in a group");

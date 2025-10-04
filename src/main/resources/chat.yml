@@ -1,76 +1,79 @@
 chatp:
-  help:
-    list:
-      - "&cPlayer help"
-      - "&r"
-      - "&c- &e/chatp reload"
-      - "&c- &e/chatp group help"
-      - "&c- &e/chatp quit"
-      - "&c- &e/chatp join {groupName}"
-      - "&c- &e/chatp mute {playerName}"
-      - "&c- &e/chatp help"
-      - "&c- &e/chatp invite {playerName}"
-      - "&c- &e/chatp staff {playerName}"
-      - "&c- &e/chatp quit"
-      - "&r"
-      - "&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin"
-    error: "&cAn error occurred"
-  usage: "&c/chatp help to get instruction for all commands"
-  permissionMSG: "&cYou dont have a permission!"
-  remove:
-    usage: "&e/chatp remove &cplayerName"
-    notPlayer: "&cYou should be a player"
-    notFound: "&cCant find this player :("
-    notSame: "&cYour group and the requested player's group its not the same"
-    both: "&cboth players are not in group"
-    removed: "%player_name% &asuccessfully removed"
-    cant: "&cYou are not admin or staff"
-    error: "&cAn error occurred"
-  reload:
-    usage: "&e/chatp reload"
-    error: "&cAn error occurred"
-  quit:
-    usage: "&e/chatp reload"
-    notGroup: "&cYou are not in any group"
-    error: "&cAn error occurred"
-  mute:
-    usage: "&e/chatp mute playername"
-    cantPlayer: "&cCant find this player"
-    notPlayer: "&cYou should be a player"
-    notSame: "&cYou or that player should be in a group"
-    muted: "&ePlayer muted"
-    cantMute: "&cYou cant mute this player"
-    error: "&cAn error occurred"
-  join:
-    usage: "&e/chatp join groupname"
-    notPlayer: "&cYou should be a player"
-    invitedFirst: "&eYou should be invited first"
-    error: "&cAn error occurred"
-  invite:
-    usage: "&e/chatp invite playername"
-    cantFuckYourself: "&cYou cant invite yourself"
-    cantFind: "&cCant find this player"
-    cant: "&cYou need to be admin or staff to invite"
-    bar: "&eClick this to join to the group"
-    notPlayer: "&cYou should be a player"
-    joinMSG: "%player_name% Invited you to %group_name%\n&eClick this messaage to join"
-    error: "&cAn error occurred"
-  group:
-    help:
-      - "&cPlayer help &8- &e&lGroup"
-      - "&r"
-      - "&c- &e/chatp group delete {groupName}"
-      - "&c- &e/chatp group help"
-      - "&c- &e/chatp group create {groupName}"
-      - "&c- &e/chatp group"
-      - "&r"
-      - "&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin"
-    created: "&e%chatp_group% &ahas been created"
-    deleted: "&e%chatp_group% &chas been deleted"
-    usage: "&e/chatp group help,create,delete"
-  staff:
-    usage: "&e/chatp staff {playerName}"
-    cantFind: "&cCant find this player"
-    cantFuckYourself: "&cYou are admin ;|"
-    cantFuckIt: "&cYou should be admin"
-    promoted: "&e%player_name% &aSuccessfully promoted"
+   playerchat: '&e%player_name% %chatp_group%&r&8: &7{msg}'
+   help:
+      list:
+      - '&cPlayer help'
+      - '&r'
+      - '&c- &e/chatp reload'
+      - '&c- &e/chatp group help'
+      - '&c- &e/chatp quit'
+      - '&c- &e/chatp join {groupName}'
+      - '&c- &e/chatp mute {playerName}'
+      - '&c- &e/chatp help'
+      - '&c- &e/chatp invite {playerName}'
+      - '&c- &e/chatp staff {playerName}'
+      - '&c- &e/chatp quit'
+      - '&r'
+      - '&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin'
+      error: '&cAn error occurred'
+   usage: '&c/chatp help to get instruction for all commands'
+   permissionMSG: '&cYou dont have a permission!'
+   remove:
+      usage: '&e/chatp remove &cplayerName'
+      notPlayer: '&cYou should be a player'
+      notFound: '&cCant find this player :('
+      notSame: '&cYour group and the requested player''s group its not the same'
+      both: '&cboth players are not in group'
+      removed: '%player_name% &asuccessfully removed'
+      cant: '&cYou are not admin or staff'
+      error: '&cAn error occurred'
+   reload:
+      usage: '&e/chatp reload'
+      error: '&cAn error occurred'
+   quit:
+      usage: '&e/chatp reload'
+      notGroup: '&cYou are not in any group'
+      error: '&cAn error occurred'
+   mute:
+      usage: '&e/chatp mute playername'
+      cantPlayer: '&cCant find this player'
+      notPlayer: '&cYou should be a player'
+      notSame: '&cYou or that player should be in a group'
+      muted: '&ePlayer muted'
+      cantMute: '&cYou cant mute this player'
+      error: '&cAn error occurred'
+   join:
+      usage: '&e/chatp join groupname'
+      notPlayer: '&cYou should be a player'
+      invitedFirst: '&eYou should be invited first'
+      error: '&cAn error occurred'
+   invite:
+      usage: '&e/chatp invite playername'
+      cantFuckYourself: '&cYou cant invite yourself'
+      cantFind: '&cCant find this player'
+      cant: '&cYou need to be admin or staff to invite'
+      bar: '&eClick this to join to the group'
+      notPlayer: '&cYou should be a player'
+      joinMSG: |-
+         %player_name% Invited you to %group_name%
+         &eClick this messaage to join
+      error: '&cAn error occurred'
+   group:
+      help:
+      - '&cPlayer help &8- &e&lGroup'
+      - '&r'
+      - '&c- &e/chatp group delete {groupName}'
+      - '&c- &e/chatp group help'
+      - '&c- &e/chatp group create {groupName}'
+      - '&c- &e/chatp group'
+      - '&r'
+      - '&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin'
+      created: '&e%chatp_group% &ahas been created'
+      deleted: '&e%chatp_group% &chas been deleted'
+      usage: '&e/chatp group help,create,delete'
+   staff:
+      usage: '&e/chatp staff {playerName}'
+      cantFind: '&cCant find this player'
+      cantFuckYourself: '&cYou are admin ;|'
+      cantFuckIt: '&cYou should be admin'
+      promoted: '&e%player_name% &aSuccessfully promoted'

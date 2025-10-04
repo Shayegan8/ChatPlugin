@@ -32,21 +32,17 @@ public class Grouping implements Listener {
 		e.setCancelled(true);
 		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
 			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
-					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase)
-					.thenComposeAsync((condition) -> {
+					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenCompose((condition) -> {
 						if (condition) {
-							System.out.println(1);
-							final String formatedMSG = ColorUtils.C(e.getPlayer(), ChatPlugin.configuration
-									.getString("playerChat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
-							System.out.println(2);
+							final String formatedMSG = ColorUtils.C(e.getPlayer(), (String) ChatPlugin.entries
+									.getOrDefault("chatp.playerchat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
 							final String rp = formatedMSG.replace("{msg}", msg);
-							System.out.println(3);
 							return CompletableFuture.completedFuture(rp);
 						}
 						return null;
 					}).thenAccept((m) -> {
 						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> eachPlayer.sendMessage(m));
-						ChatPlugin.getInstance().getLogger().info(msg);
+						ChatPlugin.getInstance().getLogger().info(e.getPlayer().getName() + ": " + msg);
 					}).exceptionally((exp) -> {
 						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
@@ -58,14 +54,11 @@ public class Grouping implements Listener {
 	public void onChat_(AsyncPlayerChatEvent e) {
 		final Player player = e.getPlayer();
 		final UUID uuid = e.getPlayer().getUniqueId();
-		MDatabase.isPlayerMuted(uuid).thenComposeAsync(condition -> {
-			if (condition)
-				return CompletableFuture.completedFuture(
-						ColorUtils.C(player, ChatPlugin.configuration.getString("cantMSG", "You are muted")));
-			return CompletableFuture.completedFuture(null);
-		}).thenAccept(result -> {
-			if (result != null)
-				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> player.sendMessage(result));
+		MDatabase.isPlayerMuted(uuid).thenAccept(condition -> {
+			if (condition) {
+				ChatPlugin.sendCMSG(player, "chatp.cantMSG", "&cYou are muted in group");
+				e.setCancelled(true);
+			}
 		});
 	}
 
