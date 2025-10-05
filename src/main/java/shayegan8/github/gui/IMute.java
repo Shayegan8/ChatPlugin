@@ -17,7 +17,7 @@ import shayegan8.github.ChatPlugin;
 public final class IMute extends Gui {
 
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
-	private final List<Integer> emptySlots;
+	private final List<Integer> empties;
 	private final String title;
 	private final List<String> lore;
 	private final int size;
@@ -25,7 +25,7 @@ public final class IMute extends Gui {
 	public IMute() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.mute.emptyLore").stream().collect(Collectors.toUnmodifiableList());
 		title = ChatPlugin.configuration_menu.getString("gui.mute.title", "&cChatPlugin mute menu");
-		emptySlots = ChatPlugin.configuration_menu.getIntegerList("gui.mute.empties.slots").stream().collect(Collectors.toUnmodifiableList());
+		empties = ChatPlugin.configuration_menu.getIntegerList("gui.mute.empties.slots").stream().collect(Collectors.toUnmodifiableList());
 		size = ChatPlugin.configuration_menu.getInt("gui.mute.size", 54);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.mute.list").getKeys(false).forEach(each -> {
 			String newStr = "gui.mute.list." + each;

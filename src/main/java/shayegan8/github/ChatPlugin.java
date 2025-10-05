@@ -267,7 +267,7 @@ public final class ChatPlugin extends JavaPlugin {
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_INVITEINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_GROUPINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_REQUESTINVS = new ConcurrentHashMap<>();
-
+	
 	private static void onPlayerRepeat(UUID senderUUID, int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
 			List<Integer> emptySlots, AtomicInteger pageNumber,
 			ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Gui gui,
@@ -284,10 +284,13 @@ public final class ChatPlugin extends JavaPlugin {
 					final ItemSaver playerHead = getSkullOfOwner(pUUID);
 					final ItemStack item = playerHead.item();
 					final ItemMeta meta = item.getItemMeta();
-					meta.setLore(gui.getLore());
-					meta.setDisplayName(ColorUtils.B("&7" + pUUID.getDisplayName()));
-					item.setItemMeta(meta);
-					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, item));
+					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toUnmodifiableList());
+					Bukkit.getScheduler().runTask(getInstance(), () -> {
+						meta.setLore(gLore);
+						meta.setDisplayName(ColorUtils.C(player, "&7" + pUUID.getDisplayName()));
+						item.setItemMeta(meta);
+						inventory.setItem(emptySlot, item);
+					});
 					continue outer;
 				}
 			Bukkit.getScheduler().runTask(getInstance(), () -> {
@@ -308,10 +311,13 @@ public final class ChatPlugin extends JavaPlugin {
 					final ItemSaver playerHead = getSkullOfOwner(pUUID);
 					final ItemStack item = playerHead.item();
 					final ItemMeta meta = item.getItemMeta();
-					meta.setLore(gui.getLore());
-					meta.setDisplayName(ColorUtils.B("&7" + pUUID.getDisplayName()));
-					item.setItemMeta(meta);
-					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, item));
+					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toUnmodifiableList());
+					Bukkit.getScheduler().runTask(getInstance(), () -> {
+						meta.setLore(gLore);
+						meta.setDisplayName(ColorUtils.C(player, "&7" + pUUID.getDisplayName()));
+						item.setItemMeta(meta);
+						inventory.setItem(emptySlot, item);
+					});
 					continue outer;
 				}
 			for (int remove = 1; remove < emptySlotsSize; remove++)
@@ -335,7 +341,7 @@ public final class ChatPlugin extends JavaPlugin {
 					.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
 			return;
 		}
-		List<Integer> emptySlots = iInvite.getEmptySlots();
+		List<Integer> emptySlots = iInvite.getEmpties();
 		int emptySlotsSize = emptySlots.size();
 		AtomicInteger pageNumber = new AtomicInteger(0);
 		Stack<UUID> cloneStack = new Stack<>();
@@ -377,7 +383,7 @@ public final class ChatPlugin extends JavaPlugin {
 					.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
 			return;
 		}
-		List<Integer> emptySlots = iInvite.getEmptySlots();
+		List<Integer> emptySlots = iInvite.getEmpties();
 		int emptySlotsSize = emptySlots.size();
 		AtomicInteger pageNumber = new AtomicInteger(0);
 		Stack<UUID> cloneStack = new Stack<>();
@@ -396,7 +402,7 @@ public final class ChatPlugin extends JavaPlugin {
 					.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
 			return;
 		}
-		List<Integer> emptySlots = iMute.getEmptySlots();
+		List<Integer> emptySlots = iMute.getEmpties();
 		int emptySlotsSize = emptySlots.size();
 		AtomicInteger pageNumber = new AtomicInteger(0);
 		MDatabase.getPlayerGroup(player.getUniqueId())

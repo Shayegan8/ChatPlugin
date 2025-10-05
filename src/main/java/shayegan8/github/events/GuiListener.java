@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -107,7 +106,7 @@ public class GuiListener implements Listener {
 			currentInv.ifPresentOrElse(inventory -> {
 				player.openInventory(inventory);
 			}, () -> {
-
+				ChatPlugin.sendACMSG(player, "chatp.noMorePage", "&cNo other pages found");
 				player.closeInventory();
 			});
 		});
@@ -116,8 +115,9 @@ public class GuiListener implements Listener {
 	private void switchHandler(InventoryClickEvent e, Gui gui, Player player, String nextButton,
 			String previousButton) {
 		ItemStack item = e.getCurrentItem();
-		if (item.getType() == Material.PLAYER_HEAD && !(gui.getEntries().get(nextButton).item().getType() == item.getType())
-				&& !(gui.getEntries().get(previousButton).item().getType() == item.getType())){
+		int slot = e.getSlot();
+		if (gui.getEmpties().contains(slot)) {
+			System.out.println("kir khar");
 			switch (gui.getName()) {
 			case "request":
 				player.closeInventory();

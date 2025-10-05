@@ -17,5 +17,9 @@ public sealed abstract class Gui permits IMenu, IMute, IInvite, IRequest, IDelet
 		return null;
 	}
 
+	public List<Integer> getEmpties() {
+		return null;
+	}
+
 	public abstract Map<String, Entry> getEntries();
 }

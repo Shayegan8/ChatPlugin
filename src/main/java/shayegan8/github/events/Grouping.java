@@ -72,16 +72,12 @@ public class Grouping implements Listener {
 				MDatabase.setPlayerInGroup(uuid, false);
 			});
 		});
-		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-				() -> Placeholders.cache_group.put(uuid, group)));
-		MDatabase.getPlayerTag(uuid).thenAccept(tag -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-				() -> Placeholders.cache_tag.put(uuid, tag)));
 	}
 
 	@EventHandler
 	public void onLeft(PlayerQuitEvent e) {
 		final UUID uuid = e.getPlayer().getUniqueId();
-		Placeholders.cache_group.remove(uuid);
-		Placeholders.cache_tag.remove(uuid);
+		Placeholders.cache_group.computeIfPresent(uuid, (key, value) -> Placeholders.cache_group.remove(key));
+		Placeholders.cache_tag.computeIfPresent(uuid, (key, value) -> Placeholders.cache_tag.remove(key));
 	}
 }
