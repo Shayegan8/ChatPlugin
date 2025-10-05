@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -19,9 +20,11 @@ public final class IMenu extends Gui {
 
 	private final Inventory inv;
 	private final int size;
+	private final String title;
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
 
 	public IMenu() {
+		title = ChatPlugin.configuration_menu.getString("gui.menu.title", "&cChatPlugin menu");
 		size = ChatPlugin.configuration_menu.getInt("gui.menu.size", 54);
 		inv = Bukkit.createInventory(null, size);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {

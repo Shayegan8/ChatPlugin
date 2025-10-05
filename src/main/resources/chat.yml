@@ -56,7 +56,7 @@ chatp:
       bar: '&eClick this to join to the group'
       notPlayer: '&cYou should be a player'
       joinMSG: |-
-         %player_name% Invited you to %group_name%
+         %player_name% Invited you to %chatp_group%
          &eClick this messaage to join
       error: '&cAn error occurred'
    group:

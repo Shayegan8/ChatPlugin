@@ -27,8 +27,8 @@ public class Grouping implements Listener {
 			Placeholders.updateGroup(uuid);
 		if (Placeholders.cache_tag.get(uuid) == null)
 			Placeholders.updateTag(uuid);
+		e.setCancelled(true);
 		final String msg = e.getMessage();
-		Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> e.setCancelled(true));
 		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
 			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
 					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenCompose((condition) -> {

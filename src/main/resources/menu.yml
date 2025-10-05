@@ -123,6 +123,9 @@ gui:
       size: 54
       title:
          text: '&eChatPlugin mute players'
+      emptyLore:
+      - '&r'
+      - '&a&lRIGHT CLICK &r&8- &eto mute player'
       empties:
          slots:
          - 10
@@ -201,6 +204,9 @@ gui:
       size: 54
       title:
          text: '&eChatPlugin invite players'
+      emptyLore:
+      - '&r'
+      - '&a&lRIGHT CLICK &r&8- &eto invite player'
       empties:
          slots:
          - 10
@@ -279,6 +285,9 @@ gui:
       size: 54
       title:
          text: '&eChatPlugin mute players'
+      emptyLore:
+      - '&r'
+      - '&a&lRIGHT CLICK &r&8- &eto send request to group''s admin'
       empties:
          slots:
          - 10

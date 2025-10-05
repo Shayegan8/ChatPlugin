@@ -40,6 +40,7 @@ import shayegan8.github.gui.IInvite;
 import shayegan8.github.gui.IMenu;
 import shayegan8.github.gui.IMute;
 import shayegan8.github.gui.IRequest;
+import shayegan8.github.gui.ItemSaver;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -213,19 +214,18 @@ public final class ChatPlugin extends JavaPlugin {
 		return head;
 	}
 
-	public static ItemStack getSkullOfOwner(Player player) {
+	public static ItemSaver getSkullOfOwner(Player player) {
 		final ItemStack head = new ItemStack(Material.PLAYER_HEAD);
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
 		meta.setOwnerProfile(player.getPlayerProfile());
 		head.setItemMeta(meta);
-		return head;
+		return new ItemSaver(head, player);
 	}
 
 	public static final Map<UUID, Inventory> STORED_MENUINVS = new ConcurrentHashMap<>();
 	public static final Map<UUID, Inventory> STORED_DELETEINVS = new ConcurrentHashMap<>();
 
-	public static void onPlayerMenu(Player player, Map<String, Entry> entries,
-			CompletableFuture<Inventory> callback) {
+	public static void onPlayerMenu(Player player, Map<String, Entry> entries, CompletableFuture<Inventory> callback) {
 		final Optional<Inventory> playerInv = Optional.ofNullable(STORED_MENUINVS.get(player.getUniqueId()));
 		if (playerInv.isPresent()) {
 			CompletableFuture.supplyAsync(() -> playerInv.get()).thenAccept(firstInventory -> Bukkit.getScheduler()
@@ -233,15 +233,11 @@ public final class ChatPlugin extends JavaPlugin {
 			return;
 		}
 		final Inventory inventory = Bukkit.createInventory(null, iMenu.getSize());
-		CompletableFuture.runAsync(() -> {
-			normalFiller(player, entries, inventory);
-			STORED_MENUINVS.put(player.getUniqueId(), inventory);
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				callback.complete(inventory);
-				callback.thenAccept(firstInventory -> Bukkit.getScheduler().runTask(getInstance(),
-						() -> player.openInventory(firstInventory)));
-			});
-		}, EVIRTUAL);
+		normalFiller(player, entries, inventory);
+		STORED_MENUINVS.put(player.getUniqueId(), inventory);
+		callback.complete(inventory);
+		callback.thenAccept(firstInventory -> Bukkit.getScheduler().runTask(getInstance(),
+				() -> player.openInventory(firstInventory)));
 	}
 
 	private static void normalFiller(Player player, Map<String, Entry> entries, Inventory inv) {
@@ -272,25 +268,31 @@ public final class ChatPlugin extends JavaPlugin {
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_GROUPINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_REQUESTINVS = new ConcurrentHashMap<>();
 
-	private static void onPlayerRepeat(UUID playerUUID_, int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
+	private static void onPlayerRepeat(UUID senderUUID, int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
 			List<Integer> emptySlots, AtomicInteger pageNumber,
 			ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Gui gui,
 			CompletableFuture<Inventory> callback) {
 		final ConcurrentHashMap<Integer, Inventory> pages = new ConcurrentHashMap<>();
 		final AtomicReference<Inventory> firstInventory = new AtomicReference<>();
+		final Player player = Bukkit.getPlayer(senderUUID);
 		if (checkingArea < emptySlotsSize) {
-			final Inventory inventory = Bukkit.createInventory(null, gui.getSize());
-			CompletableFuture.runAsync(() -> normalFiller(Bukkit.getPlayer(playerUUID_), gui.getEntries(), inventory),
-					EVIRTUAL);
+			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(), ColorUtils.C(player, gui.getTitle()));
+			normalFiller(Bukkit.getPlayer(senderUUID), gui.getEntries(), inventory);
 			outer: for (UUID playerUUID : cloneStack.reversed())
 				for (int emptySlot : emptySlots) {
-					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
-					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, playerHead));
+					final Player pUUID = Bukkit.getPlayer(playerUUID);
+					final ItemSaver playerHead = getSkullOfOwner(pUUID);
+					final ItemStack item = playerHead.item();
+					final ItemMeta meta = item.getItemMeta();
+					meta.setLore(gui.getLore());
+					meta.setDisplayName(ColorUtils.B("&7" + pUUID.getDisplayName()));
+					item.setItemMeta(meta);
+					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, item));
 					continue outer;
 				}
 			Bukkit.getScheduler().runTask(getInstance(), () -> {
 				pages.put(pageNumber.get(), inventory);
-				STORED_MUTEINVS.put(playerUUID_, pages);
+				collection.put(senderUUID, pages);
 				if (pageNumber.get() == 0) {
 					firstInventory.lazySet(inventory);
 					callback.complete(firstInventory.get());
@@ -298,13 +300,18 @@ public final class ChatPlugin extends JavaPlugin {
 			});
 
 		} else { // checkingArea >= emptySlotsSize
-			final Inventory inventory = Bukkit.createInventory(null, gui.getSize());
-			CompletableFuture.runAsync(() -> normalFiller(Bukkit.getPlayer(playerUUID_), gui.getEntries(), inventory),
-					EVIRTUAL);
+			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(), ColorUtils.C(player, gui.getTitle()));
+			normalFiller(player, gui.getEntries(), inventory);
 			outer: for (UUID playerUUID : cloneStack)
 				for (int emptySlot : emptySlots) {
-					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
-					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, playerHead));
+					final Player pUUID = Bukkit.getPlayer(playerUUID);
+					final ItemSaver playerHead = getSkullOfOwner(pUUID);
+					final ItemStack item = playerHead.item();
+					final ItemMeta meta = item.getItemMeta();
+					meta.setLore(gui.getLore());
+					meta.setDisplayName(ColorUtils.B("&7" + pUUID.getDisplayName()));
+					item.setItemMeta(meta);
+					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, item));
 					continue outer;
 				}
 			for (int remove = 1; remove < emptySlotsSize; remove++)
@@ -315,7 +322,7 @@ public final class ChatPlugin extends JavaPlugin {
 				if (pageNumber.get() == 0)
 					firstInventory.lazySet(inventory);
 			});
-			onPlayerRepeat(playerUUID_, checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber, collection,
+			onPlayerRepeat(senderUUID, checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber, collection,
 					gui, callback);
 		}
 	}
@@ -348,7 +355,8 @@ public final class ChatPlugin extends JavaPlugin {
 					.runTask(getInstance(), () -> player.openInventory(firstInventory)));
 			return;
 		}
-		final Inventory inventory = Bukkit.createInventory(null, iDelete.getSize());
+		final Inventory inventory = Bukkit.createInventory(null, iDelete.getSize(),
+				ColorUtils.C(player, iDelete.getTitle()));
 		CompletableFuture.runAsync(() -> {
 			normalFiller(player, iDelete.getEntries(), inventory);
 			STORED_DELETEINVS.put(player.getUniqueId(), inventory);
@@ -397,7 +405,7 @@ public final class ChatPlugin extends JavaPlugin {
 					int playersGroupsSize = cloneStack.size();
 					int checkingArea = playersGroupsSize - emptySlotsSize;
 					onPlayerRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots,
-							pageNumber, STORED_INVITEINVS, iInvite, callback);
+							pageNumber, STORED_MUTEINVS, iMute, callback);
 
 				});
 	}

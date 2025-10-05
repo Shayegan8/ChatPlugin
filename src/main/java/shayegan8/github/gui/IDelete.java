@@ -16,9 +16,11 @@ import shayegan8.github.ChatPlugin;
 public final class IDelete extends Gui {
 
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
+	private final String title;
 	private final int size;
 
 	public IDelete() {
+		title = ChatPlugin.configuration_menu.getString("gui.delete.title", "&cAre you sure about it?");
 		size = ChatPlugin.configuration_menu.getInt("gui.delete.size", 9);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.delete.list").getKeys(false).forEach(each -> {
 			String newStr = "gui.delete.list." + each;
@@ -34,9 +36,6 @@ public final class IDelete extends Gui {
 			else
 				item = new ItemStack(Material.valueOf(materialName), amount);
 			entries.put(newStr, new Entry(materialName, item, displayName, amount, slots, lore));
-		});
-		entries.keySet().stream().forEach(each -> {
-			System.out.println(each);
 		});
 	}
 

@@ -17,10 +17,10 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@Getter //TODO: secure database
+@Getter
 public class MDatabase {
 
-	private Connection connection = null;
+	private Connection connection = null; 
 	private final String name;
 
 	private final static String PATH = ChatPlugin.getInstance().getDataFolder() + "/database";
@@ -89,7 +89,7 @@ public class MDatabase {
 				PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement(
 						"INSERT INTO groups SELECT ? WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groupName = ?)");
 				pStatement.setString(1, groupName);
-				pStatement.setString(2, groupName);
+				pStatement.setString(2, groupName); 
 				pStatement.executeUpdate();
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
@@ -186,13 +186,9 @@ public class MDatabase {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("INSERT INTO players (groupName, playerUUID) VALUES (?, ?)"
 								+ " ON CONFLICT(playerUUID) DO UPDATE SET groupName=excluded.groupName");
-				System.out.println(1);
 				pState.setString(1, groupName);
-				System.out.println(2);
 				pState.setBytes(2, convertToBlob(playerUUID));
-				System.out.println(3);
 				pState.executeUpdate();
-				System.out.println(4);
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,10 +18,14 @@ public final class IRequest extends Gui {
 
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
 	private final List<Integer> emptySlots;
+	private final String title;
+	private final List<String> lore;
 	private final int size;
 
 	public IRequest() {
-		emptySlots = ChatPlugin.configuration_menu.getIntegerList("gui.request.empties.slots");
+		lore = ChatPlugin.configuration_menu.getStringList("gui.request.emptyLore").stream().collect(Collectors.toUnmodifiableList());
+		title = ChatPlugin.configuration_menu.getString("gui.request.title", "&cRequest to groups");
+		emptySlots = ChatPlugin.configuration_menu.getIntegerList("gui.request.empties.slots").stream().collect(Collectors.toUnmodifiableList());
 		size = ChatPlugin.configuration_menu.getInt("gui.request.size", 54);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.request.list").getKeys(false).forEach(each -> {
 			String newStr = "gui.request.list." + each;

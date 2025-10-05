@@ -33,7 +33,6 @@ public class GuiListener implements Listener {
 			ChatPlugin.iMenu.getEntries().keySet().stream()
 					.filter(key -> ChatPlugin.iMenu.getEntries().get(key).item().equals(e.getCurrentItem()))
 					.forEach(key -> {
-						System.out.println(key);
 						CompletableFuture<Inventory> callback = new CompletableFuture<>();
 						switch (key) {
 						case "gui.menu.list.a":
@@ -42,7 +41,6 @@ public class GuiListener implements Listener {
 								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
 										() -> player.openInventory(firstInventory));
 							});
-							System.out.println("3");
 							break;
 						case "gui.menu.list.b":
 							player.closeInventory();
@@ -86,12 +84,14 @@ public class GuiListener implements Listener {
 		if (e.isRightClick()) {
 			gui.getEntries().keySet().stream()
 					.filter(key -> gui.getEntries().get(key).item().equals(e.getCurrentItem())).forEach(key -> {
-						if (key.equalsIgnoreCase(nextButton))
+						if (key.equalsIgnoreCase(nextButton)) {
 							inventoryPage(collection, player, openInventory, true);
-						else if (key.equalsIgnoreCase(previousButton))
+						} else if (key.equalsIgnoreCase(previousButton)) {
 							inventoryPage(collection, player, openInventory, false);
+						} else {
+							switchHandler(e, gui, player, nextButton, previousButton);
+						}
 					});
-			switchHandler(e, gui, player);
 		}
 	}
 
@@ -113,9 +113,11 @@ public class GuiListener implements Listener {
 		});
 	}
 
-	private void switchHandler(InventoryClickEvent e, Gui gui, Player player) {
-		if (e.getCurrentItem().getType() == Material.PLAYER_HEAD) {
-			ItemStack item = e.getCurrentItem();
+	private void switchHandler(InventoryClickEvent e, Gui gui, Player player, String nextButton,
+			String previousButton) {
+		ItemStack item = e.getCurrentItem();
+		if (item.getType() == Material.PLAYER_HEAD && !(gui.getEntries().get(nextButton).item().getType() == item.getType())
+				&& !(gui.getEntries().get(previousButton).item().getType() == item.getType())){
 			switch (gui.getName()) {
 			case "request":
 				player.closeInventory();
