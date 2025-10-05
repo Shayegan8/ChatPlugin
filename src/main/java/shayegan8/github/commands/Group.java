@@ -6,7 +6,6 @@ import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
-import shayegan8.github.expansions.Placeholders;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,8 +64,6 @@ public class Group extends CommandManager {
 					MDatabase.setPlayerInGroup(uuid, true);
 					MDatabase.setPlayerTag(uuid, "admin");
 					MDatabase.setPlayerGroup(uuid, args[1]);
-					Placeholders.updateGroup(uuid);
-					Placeholders.updateTag(uuid);
 					ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");
 				});
 				break;
@@ -92,9 +89,7 @@ public class Group extends CommandManager {
 						MDatabase.setPlayerInGroup(uuid, false);
 						MDatabase.setPlayerTag(uuid, "none");
 						MDatabase.setPlayerGroup(uuid, "none");
-						ChatPlugin.sendCMSG(player, "chatp.group.deleted", "&e%chatp_group% &chas been deleted");
-						Placeholders.updateGroup(uuid);
-						Placeholders.updateTag(uuid);
+						ChatPlugin.sendCMSG(player, "chatp.group.deleted", "&cYour group has been deleted");
 					});
 				});
 				break;

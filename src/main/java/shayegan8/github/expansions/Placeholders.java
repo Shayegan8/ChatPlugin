@@ -2,9 +2,13 @@ package shayegan8.github.expansions;
 
 import lombok.SneakyThrows;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+
+import shayegan8.github.ChatPlugin;
 import shayegan8.github.database.MDatabase;
 
 import java.util.Map;
@@ -27,8 +31,10 @@ public class Placeholders extends PlaceholderExpansion {
 	}
 
 	private void cleaner() {
-		cache_group.clear();
-		cache_tag.clear();
+		Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+			cache_group.clear();
+			cache_tag.clear();
+		});
 	}
 
 	@Override
@@ -51,36 +57,23 @@ public class Placeholders extends PlaceholderExpansion {
 	public String onPlaceholderRequest(Player player, @NotNull String parms) {
 		final UUID uuid = player.getUniqueId();
 		if (parms.equalsIgnoreCase("group")) {
-			if (cache_tag.get(uuid) == null)
+			if (cache_group.get(uuid) == null)
 				updateGroup(uuid);
-			return getGroup(uuid);
+			return cache_group.getOrDefault(uuid, "loading");
 		} else if (parms.equalsIgnoreCase("tag")) {
 			if (cache_tag.get(uuid) == null)
 				updateTag(uuid);
-			return getTag(uuid);
+			return cache_tag.getOrDefault(uuid, "loading");
 		}
 		return null;
 	}
-
-	private String getGroup(UUID uuid) {
-		return cache_group.getOrDefault(uuid, "loading");
-	}
-
-	private String getTag(UUID uuid) {
-		return cache_tag.getOrDefault(uuid, "loading");
-	}
-
+	
 	public static void updateGroup(UUID uuid) {
-		MDatabase.getPlayerGroup(uuid).thenAccept(group -> {
-			cache_tag.remove(uuid);
-			cache_group.put(uuid, group);
-		});
+		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> cache_group.putIfAbsent(uuid, group)));
+	}
+	
+	public static void updateTag(UUID uuid) {
+		MDatabase.getPlayerTag(uuid).thenAccept(tag -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> cache_tag.putIfAbsent(uuid, tag)));
 	}
 
-	public static void updateTag(UUID uuid) {
-		MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
-			cache_tag.remove(uuid);
-			cache_tag.put(uuid, tag);
-		});
-	}
 }

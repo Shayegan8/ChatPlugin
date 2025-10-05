@@ -56,10 +56,12 @@ public class Mute extends CommandManager {
 							ChatPlugin.sendCMSG(player, "chatp.mute.cantFuckYourself", "&cYou cant mute yourself");
 							return;
 						}
-						MDatabase.setPlayerMuted(argUUID, true);
-						ChatPlugin.sendCMSG(player, "chatp.mute.muted", "&ePlayer muted");
+						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+							MDatabase.setPlayerMuted(argUUID, true);
+							ChatPlugin.sendCMSG(player, "chatp.mute.muted", "&ePlayer muted");
+						});
 					}
-				}).exceptionallyAsync(exp -> {
+				}).exceptionally(exp -> {
 					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 				});
 	}

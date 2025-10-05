@@ -8,7 +8,9 @@ import shayegan8.github.database.MDatabase;
 
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
+//TODO: fix this command
 public class Quit extends CommandManager {
 
 	@Override
@@ -32,16 +34,36 @@ public class Quit extends CommandManager {
 			return;
 		}
 		final UUID senderUUID = player.getUniqueId();
-		MDatabase.isPlayerInGroup(senderUUID).thenAccept(isInGroup -> {
-			if (!isInGroup)
+		MDatabase.isPlayerInGroup(senderUUID).thenCompose(isInGroup -> {
+			if (!isInGroup) {
 				ChatPlugin.sendCMSG(player, "chatp.quit.notGroup", "&cYou are not in any group");
-			else {
-				MDatabase.setPlayerTag(senderUUID, "none");
-				MDatabase.setPlayerGroup(senderUUID, "none");
-				MDatabase.setPlayerInGroup(senderUUID, false);
-				ChatPlugin.sendCMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
+				return CompletableFuture.completedFuture(null);
 			}
-		}).exceptionallyAsync(exp -> {
+			return MDatabase.getPlayerGroup(senderUUID);
+		}).thenAccept(senderGroup -> {
+			if (senderGroup == null)
+				return;
+			if (senderGroup.equalsIgnoreCase("admin")) {
+				MDatabase.getPlayersByGroup(senderGroup).thenAccept(stack -> {
+					stack.forEach(eachUUID -> {
+						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+							MDatabase.setPlayerTag(senderUUID, "none");
+							MDatabase.setPlayerGroup(senderUUID, "none");
+							MDatabase.setPlayerInGroup(senderUUID, false);
+							ChatPlugin.sendACMSG(Bukkit.getPlayer(eachUUID), "chatp.quit.quit",
+									"&eYou are no longer in this group");
+						});
+					});
+				});
+			} else {
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+					MDatabase.setPlayerTag(senderUUID, "none");
+					MDatabase.setPlayerGroup(senderUUID, "none");
+					MDatabase.setPlayerInGroup(senderUUID, false);
+					ChatPlugin.sendCMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
+				});
+			}
+		}).exceptionally(exp -> {
 			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 		});
 	}

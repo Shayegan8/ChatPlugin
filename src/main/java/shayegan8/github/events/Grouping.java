@@ -14,7 +14,6 @@ import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.expansions.Placeholders;
 
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -29,7 +28,7 @@ public class Grouping implements Listener {
 		if (Placeholders.cache_tag.get(uuid) == null)
 			Placeholders.updateTag(uuid);
 		final String msg = e.getMessage();
-		e.setCancelled(true);
+		Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> e.setCancelled(true));
 		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
 			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
 					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenCompose((condition) -> {
@@ -43,8 +42,6 @@ public class Grouping implements Listener {
 					}).thenAccept((m) -> {
 						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> eachPlayer.sendMessage(m));
 						ChatPlugin.getInstance().getLogger().info(e.getPlayer().getName() + ": " + msg);
-					}).exceptionally((exp) -> {
-						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
 		});
 	}
@@ -57,7 +54,7 @@ public class Grouping implements Listener {
 		MDatabase.isPlayerMuted(uuid).thenAccept(condition -> {
 			if (condition) {
 				ChatPlugin.sendCMSG(player, "chatp.cantMSG", "&cYou are muted in group");
-				e.setCancelled(true);
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> e.setCancelled(true));
 			}
 		});
 	}
@@ -69,15 +66,16 @@ public class Grouping implements Listener {
 		MDatabase.playerHasGroup(uuid).thenAccept(has -> {
 			if (has)
 				return;
-			MDatabase.setPlayerGroup(uuid, "none");
-			MDatabase.setPlayerTag(uuid, "none");
-			MDatabase.setPlayerInGroup(uuid, false);
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+				MDatabase.setPlayerGroup(uuid, "none");
+				MDatabase.setPlayerTag(uuid, "none");
+				MDatabase.setPlayerInGroup(uuid, false);
+			});
 		});
-		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Placeholders.cache_group.put(uuid, group))
-				.exceptionally(exp -> {
-					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-				});
-		MDatabase.getPlayerTag(uuid).thenAccept(tag -> Placeholders.cache_tag.put(uuid, tag));
+		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+				() -> Placeholders.cache_group.put(uuid, group)));
+		MDatabase.getPlayerTag(uuid).thenAccept(tag -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+				() -> Placeholders.cache_tag.put(uuid, tag)));
 	}
 
 	@EventHandler

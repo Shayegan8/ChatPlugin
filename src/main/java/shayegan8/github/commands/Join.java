@@ -36,9 +36,11 @@ public class Join extends CommandManager {
 			if (!invited)
 				ChatPlugin.sendCMSG(player, "chatp.mute.invitedFirst", "&eYou should be invited first");
 			else {
-				MDatabase.setPlayerGroup(senderUUID, args[0]);
-				MDatabase.setPlayerInGroup(senderUUID, true);
-				ChatPlugin.sendCMSG(player, "chatp.join.invited", "&eYou are now in %chatp_group% group");
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+					MDatabase.setPlayerGroup(senderUUID, args[0]);
+					MDatabase.setPlayerInGroup(senderUUID, true);
+					ChatPlugin.sendACMSG(player, "chatp.join.invited", "&eYou are now in %chatp_group% group");
+				});
 			}
 		}).exceptionallyAsync(exp -> {
 			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));

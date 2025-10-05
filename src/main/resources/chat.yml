@@ -13,6 +13,7 @@ chatp:
       - '&c- &e/chatp invite {playerName}'
       - '&c- &e/chatp staff {playerName}'
       - '&c- &e/chatp quit'
+      - '&c- &e/chatp menu'
       - '&r'
       - '&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin'
       error: '&cAn error occurred'
@@ -60,7 +61,7 @@ chatp:
       error: '&cAn error occurred'
    group:
       help:
-      - '&cPlayer help &8- &e&lGroup'
+      - '&cPlayer help &8- &e&lGroup &r&7(%chatp_group%)'
       - '&r'
       - '&c- &e/chatp group delete {groupName}'
       - '&c- &e/chatp group help'

@@ -22,6 +22,6 @@ public class CMenu extends CommandManager {
 			return;
 		}
 		CompletableFuture<Inventory> compt = new CompletableFuture<>();
-		ChatPlugin.onPlayerRequest(player, ChatPlugin.iMenu.getEntries(), compt);
+		ChatPlugin.onPlayerMenu(player, ChatPlugin.iMenu.getEntries(), compt);
 	}
 }

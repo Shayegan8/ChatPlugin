@@ -57,13 +57,15 @@ public class Remove extends CommandManager {
 					return MDatabase.getPlayerTag(senderUUID);
 				}).thenAccept(tag -> {
 					if (tag.equals("admin") || tag.equals("staff")) {
-						MDatabase.setPlayerGroup(argUUID, "none");
-						MDatabase.setPlayerTag(argUUID, "none");
-						MDatabase.setPlayerInGroup(argUUID, false);
-						ChatPlugin.sendCMSG(player, "chatp.remove.removed", "%player_name% &asuccessfully removed");
+						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+							MDatabase.setPlayerGroup(argUUID, "none");
+							MDatabase.setPlayerTag(argUUID, "none");
+							MDatabase.setPlayerInGroup(argUUID, false);
+							ChatPlugin.sendACMSG(player, "chatp.remove.removed", "%player_name% &asuccessfully removed");
+						});
 					} else
 						ChatPlugin.sendCMSG(player, "chatp.remove.cant", "&cYou are not admin or staff");
-				}).exceptionallyAsync(exp -> {
+				}).exceptionally(exp -> {
 					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 				});
 	}

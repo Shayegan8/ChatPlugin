@@ -73,11 +73,12 @@ import java.util.stream.Collectors;
 @Permission(name = "chatp.base.reload", desc = "chatplugin reload command", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.base.remove", desc = "Chatplugin remove permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.base.quit", desc = "Chatplugin quit permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.mute", desc = "Chatplugin mute permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.join", desc = "Chatplugin join permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.invite", desc = "Chatplugin invite permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.group", desc = "Chatplugin group permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.friends", desc = "Chatplugin friends permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.mute", desc = "Chatplugin mute permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.menu", desc = "Chatplugin menu permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.join", desc = "Chatplugin join permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.invite", desc = "Chatplugin invite permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.group", desc = "Chatplugin group permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.friends", desc = "Chatplugin friends permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.*", desc = "Chatplugin wildcard permission", defaultValue = PermissionDefault.OP)
 @Permission(name = "chatp.base", desc = "Chatplugin base permission", defaultValue = PermissionDefault.OP)
 @Commands({ @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp") })
@@ -216,7 +217,6 @@ public final class ChatPlugin extends JavaPlugin {
 		final ItemStack head = new ItemStack(Material.PLAYER_HEAD);
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
 		meta.setOwnerProfile(player.getPlayerProfile());
-		meta.setDisplayName(player.getName());
 		head.setItemMeta(meta);
 		return head;
 	}
@@ -224,7 +224,7 @@ public final class ChatPlugin extends JavaPlugin {
 	public static final Map<UUID, Inventory> STORED_MENUINVS = new ConcurrentHashMap<>();
 	public static final Map<UUID, Inventory> STORED_DELETEINVS = new ConcurrentHashMap<>();
 
-	public static void onPlayerRequest(Player player, Map<String, Entry> entries,
+	public static void onPlayerMenu(Player player, Map<String, Entry> entries,
 			CompletableFuture<Inventory> callback) {
 		final Optional<Inventory> playerInv = Optional.ofNullable(STORED_MENUINVS.get(player.getUniqueId()));
 		if (playerInv.isPresent()) {
@@ -285,7 +285,6 @@ public final class ChatPlugin extends JavaPlugin {
 			outer: for (UUID playerUUID : cloneStack.reversed())
 				for (int emptySlot : emptySlots) {
 					ItemStack playerHead = getSkullOfOwner(Bukkit.getPlayer(playerUUID));
-					System.out.println("running inv task");
 					Bukkit.getScheduler().runTask(getInstance(), () -> inventory.setItem(emptySlot, playerHead));
 					continue outer;
 				}
@@ -336,10 +335,12 @@ public final class ChatPlugin extends JavaPlugin {
 		Bukkit.getOnlinePlayers().stream().forEach(each -> cloneStack.push(each.getUniqueId()));
 		int playersGroupsSize = cloneStack.size();
 		int checkingArea = playersGroupsSize - emptySlotsSize;
-		onPlayerRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber,
-				STORED_REQUESTINVS, iRequest, callback);
+		CompletableFuture.runAsync(() -> {
+			onPlayerRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber,
+					STORED_REQUESTINVS, iRequest, callback);
+		}, EVIRTUAL);
 	}
-	
+
 	public static void onPlayerDelete(Player player, CompletableFuture<Inventory> callback) {
 		final Optional<Inventory> playerInv = Optional.ofNullable(STORED_DELETEINVS.get(player.getUniqueId()));
 		if (playerInv.isPresent()) {
@@ -359,7 +360,7 @@ public final class ChatPlugin extends JavaPlugin {
 		}, EVIRTUAL);
 
 	}
-	
+
 	public static void onPlayerInvite(Player player, CompletableFuture<Inventory> callback) {
 		Optional<ConcurrentHashMap<Integer, Inventory>> map = Optional
 				.ofNullable(STORED_INVITEINVS.get(player.getUniqueId()));

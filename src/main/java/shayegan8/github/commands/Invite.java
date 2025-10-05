@@ -13,7 +13,6 @@ import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -57,24 +56,23 @@ public class Invite extends CommandManager {
 			}
 			return MDatabase.getPlayerGroup(senderUUID);
 		}).thenAccept(group -> {
+			if(group == null)
+				return;
 			MDatabase.setPlayerInvited(argUUID, true);
-			CompletableFuture.supplyAsync(
-					() -> ChatPlugin.configuration.getString("chatp.invite.joinMSG",
-							"%player_name% Invited you to %group_name%\n&eClick this messaage to join"),
-					ChatPlugin.EVIRTUAL).thenAccept((joinMSG) -> {
-						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-							final TextComponent msg = new TextComponent(ColorUtils.C(player, joinMSG));
-							msg.setColor(ChatColor.RED);
-							msg.setClickEvent(new ClickEvent(ClickEvent.Action.CUSTOM, "/chatp join " + group));
-							msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-									new ComponentBuilder(ColorUtils.C(player, ChatPlugin.configuration
-											.getString("chatp.invite.bar", "&eClick this to join to the group")))
-											.create()));
-							sender.spigot().sendMessage(msg);
-						});
-					});
-		}).exceptionallyAsync(exp -> {
-			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+				String joinMSG = (String) ChatPlugin.entries.getOrDefault("chatp.invite.joinMSG",
+						"%player_name% Invited you to %chatp_group%\n&eClick this messaage to join");
+				final TextComponent msg = new TextComponent(ColorUtils.C(player, joinMSG));
+				msg.setColor(ChatColor.RED);
+				msg.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/chatp join " + group));
+				msg.setHoverEvent(
+						new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+								new ComponentBuilder(ColorUtils.C(player, ChatPlugin.configuration
+										.getString("chatp.invite.bar", "&eClick this to join to the group")))
+										.create()));
+				ChatPlugin.sendACMSG(player, "chatp.invite.sent", "&aInvite successfully has been sent");
+				Bukkit.getPlayer(args[0]).spigot().sendMessage(msg);
+			});
 		});
 	}
 }

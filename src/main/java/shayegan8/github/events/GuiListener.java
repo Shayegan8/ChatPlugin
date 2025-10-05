@@ -86,56 +86,49 @@ public class GuiListener implements Listener {
 		if (e.isRightClick()) {
 			gui.getEntries().keySet().stream()
 					.filter(key -> gui.getEntries().get(key).item().equals(e.getCurrentItem())).forEach(key -> {
-						System.out.println(key);
-						if (key.equalsIgnoreCase(nextButton)) {
-							AtomicInteger atomI = new AtomicInteger(0);
-							final List<ConcurrentHashMap<Integer, Inventory>> result = collection.values().stream()
-									.filter(entry -> entry.get(atomI.getAndIncrement()).equals(openInventory))
-									.collect(Collectors.toList());
-							result.getFirst().entrySet().stream().forEach(entry -> {
-								int currentIndex = entry.getKey();
-								Optional<Inventory> currentInv = Optional
-										.ofNullable(collection.get(player.getUniqueId()).get(currentIndex + 1));
-								currentInv.ifPresentOrElse(inventory -> {
-									player.openInventory(inventory);
-								}, () -> {
-									player.closeInventory();
-								});
-							});
-						} else if (key.equalsIgnoreCase(previousButton)) {
-							AtomicInteger atomI = new AtomicInteger(0);
-							final List<ConcurrentHashMap<Integer, Inventory>> result = collection.values().stream()
-									.filter(entry -> entry.get(atomI.getAndIncrement()).equals(openInventory))
-									.collect(Collectors.toList());
-							result.getFirst().entrySet().stream().forEach(entry -> {
-								int currentIndex = entry.getKey();
-								Optional<Inventory> currentInv = Optional
-										.ofNullable(collection.get(player.getUniqueId()).get(currentIndex - 1));
-								currentInv.ifPresentOrElse(inventory -> {
-									player.openInventory(inventory);
-								}, () -> {
-
-									player.closeInventory();
-								});
-							});
-						}
+						if (key.equalsIgnoreCase(nextButton))
+							inventoryPage(collection, player, openInventory, true);
+						else if (key.equalsIgnoreCase(previousButton))
+							inventoryPage(collection, player, openInventory, false);
 					});
-			if (e.getCurrentItem().getType() == Material.PLAYER_HEAD) {
-				ItemStack item = e.getCurrentItem();
-				switch (gui.getName()) {
-				case "request":
-					player.closeInventory();
-					player.performCommand("chatp request " + item.getItemMeta().getDisplayName());
-					break;
-				case "mute":
-					player.closeInventory();
-					player.performCommand("chatp mute " + item.getItemMeta().getDisplayName());
-					break;
-				case "invite":
-					player.closeInventory();
-					player.performCommand("chatp invite " + item.getItemMeta().getDisplayName());
-					break;
-				}
+			switchHandler(e, gui, player);
+		}
+	}
+
+	private void inventoryPage(ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Player player,
+			Inventory openInventory, boolean increament) {
+		AtomicInteger atomI = new AtomicInteger(0);
+		final List<ConcurrentHashMap<Integer, Inventory>> result = collection.values().stream()
+				.filter(entry -> entry.get(atomI.getAndIncrement()).equals(openInventory)).collect(Collectors.toList());
+		result.getFirst().entrySet().stream().forEach(entry -> {
+			int currentIndex = entry.getKey();
+			Optional<Inventory> currentInv = Optional.ofNullable(
+					collection.get(player.getUniqueId()).get(increament ? currentIndex + 1 : currentIndex - 1));
+			currentInv.ifPresentOrElse(inventory -> {
+				player.openInventory(inventory);
+			}, () -> {
+
+				player.closeInventory();
+			});
+		});
+	}
+
+	private void switchHandler(InventoryClickEvent e, Gui gui, Player player) {
+		if (e.getCurrentItem().getType() == Material.PLAYER_HEAD) {
+			ItemStack item = e.getCurrentItem();
+			switch (gui.getName()) {
+			case "request":
+				player.closeInventory();
+				player.performCommand("chatp request " + item.getItemMeta().getDisplayName());
+				break;
+			case "mute":
+				player.closeInventory();
+				player.performCommand("chatp mute " + item.getItemMeta().getDisplayName());
+				break;
+			case "invite":
+				player.closeInventory();
+				player.performCommand("chatp invite " + item.getItemMeta().getDisplayName());
+				break;
 			}
 		}
 	}
