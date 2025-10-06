@@ -6,11 +6,9 @@ import org.bukkit.entity.Player;
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.database.MDatabase;
 
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-//TODO: fix this command
 public class Quit extends CommandManager {
 
 	@Override
@@ -39,32 +37,29 @@ public class Quit extends CommandManager {
 				ChatPlugin.sendCMSG(player, "chatp.quit.notGroup", "&cYou are not in any group");
 				return CompletableFuture.completedFuture(null);
 			}
-			return MDatabase.getPlayerGroup(senderUUID);
-		}).thenAccept(senderGroup -> {
-			if (senderGroup == null)
+			return MDatabase.getPlayerTag(senderUUID);
+		}).thenAccept(senderTag -> {
+			if (senderTag == null)
 				return;
-			if (senderGroup.equalsIgnoreCase("admin")) {
-				MDatabase.getPlayersByGroup(senderGroup).thenAccept(stack -> {
-					stack.forEach(eachUUID -> {
-						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-							MDatabase.setPlayerTag(senderUUID, "none");
-							MDatabase.setPlayerGroup(senderUUID, "none");
-							MDatabase.setPlayerInGroup(senderUUID, false);
-							ChatPlugin.sendACMSG(Bukkit.getPlayer(eachUUID), "chatp.quit.quit",
-									"&eYou are no longer in this group");
-						});
-					});
-				});
-			} else {
-				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-					MDatabase.setPlayerTag(senderUUID, "none");
-					MDatabase.setPlayerGroup(senderUUID, "none");
-					MDatabase.setPlayerInGroup(senderUUID, false);
-					ChatPlugin.sendCMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
-				});
+
+			if (senderTag.equals("admin"))
+				MDatabase.getPlayerGroup(senderUUID)
+						.thenAccept(group -> MDatabase.getPlayersByGroup(group).thenAccept(stack -> stack
+								.forEach(eachUUID -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+									MDatabase.setPlayerTag(eachUUID, "none");
+									MDatabase.setPlayerGroup(eachUUID, "none");
+									MDatabase.setPlayerInGroup(eachUUID, false);
+									ChatPlugin.updateGui(group);
+									ChatPlugin.sendACMSG(Bukkit.getPlayer(eachUUID), "chatp.quit.quit",
+											"&eYou are no longer in this group");
+								}))));
+			else {
+				MDatabase.setPlayerTag(senderUUID, "none");
+				MDatabase.setPlayerGroup(senderUUID, "none");
+				MDatabase.setPlayerInGroup(senderUUID, false);
+				MDatabase.getPlayerGroup(senderUUID).thenAccept(group -> ChatPlugin.updateGui(group));
+				ChatPlugin.sendCMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
 			}
-		}).exceptionally(exp -> {
-			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 		});
 	}
 }

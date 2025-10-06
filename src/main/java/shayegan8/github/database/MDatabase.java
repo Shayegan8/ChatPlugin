@@ -13,14 +13,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Getter
 public class MDatabase {
 
-	private Connection connection = null; 
+	private Connection connection = null;
 	private final String name;
 
 	private final static String PATH = ChatPlugin.getInstance().getDataFolder() + "/database";
@@ -45,12 +45,12 @@ public class MDatabase {
 				break;
 			}
 			PreparedStatement pStatement = connection
-					.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT);");
+					.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT DEFAULT 'none');");
 			pStatement.executeUpdate();
 			pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS players "
-					+ "(groupName TEXT references groups(groupName) ON DELETE SET NULL,"
+					+ "(groupName TEXT references groups(groupName) ON DELETE SET DEFAULT,"
 					+ " playerUUID BLOB PRIMARY KEY, " + "playerTag TEXT, " + "inGroup BOOLEAN, " + "muted BOOLEAN, "
-					+ "invited BOOLEAN);");
+					+ "invited BOOLEAN, requested TEXT);");
 			pStatement.executeUpdate();
 			pStatement = connection.prepareStatement("INSERT INTO groups (groupName) VALUES (?)");
 			pStatement.setString(1, "none");
@@ -89,7 +89,7 @@ public class MDatabase {
 				PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement(
 						"INSERT INTO groups SELECT ? WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groupName = ?)");
 				pStatement.setString(1, groupName);
-				pStatement.setString(2, groupName); 
+				pStatement.setString(2, groupName);
 				pStatement.executeUpdate();
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
@@ -145,20 +145,20 @@ public class MDatabase {
 		}, ChatPlugin.EVIRTUAL);
 	}
 
-	public static CompletableFuture<Stack<UUID>> getPlayersByGroup(String groupName) {
+	public static CompletableFuture<List<UUID>> getPlayersByGroup(String groupName) {
 		return CompletableFuture.supplyAsync(() -> {
-			Stack<UUID> stack = new Stack<UUID>();
+			List<UUID> list = new ArrayList<UUID>();
 			try {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("SELECT playerUUID FROM players WHERE groupName = ?");
 				pState.setString(1, groupName);
 				var query = pState.executeQuery();
 				while (query.next())
-					stack.push(convertToUUID(query.getBytes("playerUUID")));
+					list.add(convertToUUID(query.getBytes("playerUUID")));
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
-			return stack;
+			return list.stream().collect(Collectors.toUnmodifiableList());
 		}, ChatPlugin.EVIRTUAL);
 	}
 
@@ -170,7 +170,7 @@ public class MDatabase {
 				pState.setBytes(1, convertToBlob(playerUUID));
 				var has = false;
 				var query = pState.executeQuery();
-				while (query.next())
+				while (!query.next())
 					has = true;
 				return has;
 			} catch (SQLException e) {
@@ -255,6 +255,21 @@ public class MDatabase {
 		}, ChatPlugin.EVIRTUAL);
 	}
 
+	public static void setPlayerRequest(UUID playerUUID, String groupName) {
+		CompletableFuture.runAsync(() -> {
+			try {
+				PreparedStatement pState = ChatPlugin.mDB.getConnection()
+						.prepareStatement("INSERT INTO players (requested, playerUUID) VALUES (?, ?)"
+								+ " ON CONFLICT(playerUUID) DO UPDATE SET requested=excluded.requested");
+				pState.setString(1, groupName);
+				pState.setBytes(2, convertToBlob(playerUUID));
+				pState.executeUpdate();
+			} catch (SQLException e) {
+				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
+			}
+		}, ChatPlugin.EVIRTUAL);
+	}
+
 	public static CompletableFuture<String> getPlayerTag(UUID playerUUID) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -269,6 +284,41 @@ public class MDatabase {
 			} catch (SQLException e) {
 				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
+			}
+		}, ChatPlugin.EVIRTUAL);
+	}
+
+	public static CompletableFuture<String> getPlayerRequest(UUID playerUUID) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				PreparedStatement pState = ChatPlugin.mDB.getConnection()
+						.prepareStatement("SELECT requested FROM players WHERE playerUUID=?");
+				String playerTag = null;
+				pState.setBytes(1, convertToBlob(playerUUID));
+				ResultSet query = pState.executeQuery();
+				while (query.next())
+					playerTag = query.getString("requested");
+				return playerTag;
+			} catch (SQLException e) {
+				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
+			}
+		}, ChatPlugin.EVIRTUAL);
+	}
+	
+	public static CompletableFuture<UUID> getGroupAdmin(String groupName) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				PreparedStatement pState = ChatPlugin.mDB.getConnection()
+						.prepareStatement("SELECT playerUUID FROM players WHERE groupName=? AND playerTag=?");
+				UUID playerUUID = null;
+				pState.setString(1, groupName);
+				pState.setString(2, "admin");
+				ResultSet query = pState.executeQuery();
+				while (query.next())
+					playerUUID = convertToUUID(query.getBytes("playerUUID"));
+				return playerUUID;
+			} catch (SQLException e) {
+				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 			}
 		}, ChatPlugin.EVIRTUAL);
 	}
@@ -310,7 +360,7 @@ public class MDatabase {
 	}
 
 	private static byte[] convertToBlob(UUID playerUUID) {
-		ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
+		ByteBuffer buffer = ByteBuffer.allocate(16);
 		buffer.putLong(playerUUID.getMostSignificantBits());
 		buffer.putLong(playerUUID.getLeastSignificantBits());
 		return buffer.array();

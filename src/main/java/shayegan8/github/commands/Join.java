@@ -40,6 +40,13 @@ public class Join extends CommandManager {
 					MDatabase.setPlayerGroup(senderUUID, args[0]);
 					MDatabase.setPlayerInGroup(senderUUID, true);
 					ChatPlugin.sendACMSG(player, "chatp.join.invited", "&eYou are now in %chatp_group% group");
+					MDatabase.getPlayersByGroup(args[0]).thenAccept(ls -> {
+						ls.forEach(eachUUID -> {
+							if(!Bukkit.getPlayer(eachUUID).isOnline())
+								return;
+							ChatPlugin.updateGui(args[0]);
+						});
+					});
 				});
 			}
 		}).exceptionallyAsync(exp -> {

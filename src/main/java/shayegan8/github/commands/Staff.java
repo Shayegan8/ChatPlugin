@@ -52,7 +52,7 @@ public class Staff extends CommandManager {
 		}
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 		MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
-			if (!tag.equalsIgnoreCase("admin")) {
+			if (!tag.equals("admin")) {
 				ChatPlugin.sendCMSG(player, "chatp.staff.cantFuckIt", "&cYou should be admin");
 				return;
 			}

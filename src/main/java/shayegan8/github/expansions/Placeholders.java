@@ -60,10 +60,12 @@ public class Placeholders extends PlaceholderExpansion {
 	public String onPlaceholderRequest(Player player, @NotNull String parms) {
 		final UUID uuid = player.getUniqueId();
 		if (parms.equalsIgnoreCase("group")) {
-			updateGroup(uuid);
+			if (cache_group.get(uuid) == null)
+				updateGroup(uuid);
 			return getGroup(uuid);
 		} else if (parms.equalsIgnoreCase("tag")) {
-			updateTag(uuid);
+			if (cache_tag.get(uuid) == null)
+				updateTag(uuid);
 			return getTag(uuid);
 		}
 		return null;
@@ -80,7 +82,6 @@ public class Placeholders extends PlaceholderExpansion {
 	public static void updateGroup(UUID uuid) {
 		MDatabase.getPlayerGroup(uuid).thenAccept(group -> {
 			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-				cache_group.remove(uuid);
 				cache_group.put(uuid, group);
 			});
 		});
@@ -89,7 +90,6 @@ public class Placeholders extends PlaceholderExpansion {
 	public static void updateTag(UUID uuid) {
 		MDatabase.getPlayerTag(uuid).thenAccept(tag -> {
 			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-				cache_tag.remove(uuid);
 				cache_tag.put(uuid, tag);
 			});
 		});

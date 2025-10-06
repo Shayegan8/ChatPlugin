@@ -15,8 +15,6 @@ public class ReloadC extends CommandManager {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		ChatPlugin.loadChat();
-		ChatPlugin.iMenu = new IMenu();
-		ChatPlugin.iMute = new IMute();
 		sender.sendMessage("Plugin configuration reloaded");
 	}
 }

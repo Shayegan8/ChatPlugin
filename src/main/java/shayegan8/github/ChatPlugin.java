@@ -15,7 +15,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.annotation.command.Command;
 import org.bukkit.plugin.java.annotation.command.Commands;
@@ -54,6 +53,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +61,7 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,18 +71,19 @@ import java.util.stream.Collectors;
 @Plugin(name = "ChatPlugin", version = "1.0.0")
 @Description("Simple chat plugin :O")
 @Author("Shayegan8")
-@Permission(name = "chatp.base.help", desc = "chatplugin help command", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.reload", desc = "chatplugin reload command", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.remove", desc = "Chatplugin remove permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.quit", desc = "Chatplugin quit permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.mute", desc = "Chatplugin mute permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.menu", desc = "Chatplugin menu permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.join", desc = "Chatplugin join permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.invite", desc = "Chatplugin invite permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.group", desc = "Chatplugin group permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base.friends", desc = "Chatplugin friends permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.*", desc = "Chatplugin wildcard permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "chatp.base", desc = "Chatplugin base permission", defaultValue = PermissionDefault.OP)
+@Permission(name = "chatp.base.help", desc = "chatplugin help command")
+@Permission(name = "chatp.base.reload", desc = "chatplugin reload command")
+@Permission(name = "chatp.base.remove", desc = "Chatplugin remove permission")
+@Permission(name = "chatp.base.quit", desc = "Chatplugin quit permission")
+@Permission(name = "chatp.base.mute", desc = "Chatplugin mute permission")
+@Permission(name = "chatp.base.menu", desc = "Chatplugin menu permission")
+@Permission(name = "chatp.base.join", desc = "Chatplugin join permission")
+@Permission(name = "chatp.base.invite", desc = "Chatplugin invite permission")
+@Permission(name = "chatp.base.group", desc = "Chatplugin group permission")
+@Permission(name = "chatp.base.accept", desc = "Chatplugin accept permission")
+@Permission(name = "chatp.base.request", desc = "Chatplugin request permission")
+@Permission(name = "chatp.base.*", desc = "Chatplugin wildcard permission")
+@Permission(name = "chatp.base", desc = "Chatplugin base permission")
 @Commands({ @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp") })
 @ApiVersion(Target.v1_13)
 @SoftDependency("PlaceholderAPI")
@@ -91,9 +93,11 @@ public final class ChatPlugin extends JavaPlugin {
 	private static File file2_;
 	public static FileConfiguration configuration;
 	public static FileConfiguration configuration_menu;
-	public final static Map<String, CommandManager> commands = Map.of("group", new Group(), "help", new Help(),
-			"invite", new Invite(), "join", new Join(), "mute", new Mute(), "quit", new Quit(), "reload", new ReloadC(),
-			"remove", new Remove(), "staff", new Staff(), "menu", new CMenu());
+	public final static Map<String, CommandManager> commands = Map.ofEntries(Map.entry("group", new Group()),
+			Map.entry("help", new Help()), Map.entry("invite", new Invite()), Map.entry("join", new Join()),
+			Map.entry("mute", new Mute()), Map.entry("quit", new Quit()), Map.entry("reload", new ReloadC()),
+			Map.entry("remove", new Remove()), Map.entry("staff", new Staff()), Map.entry("menu", new CMenu()),
+			Map.entry("request", new Request()), Map.entry("accept", new Accept()));
 	public final static Map<String, Integer> tags = Map.of("none", 1, "staff", 2, "admin", 3);
 	public static Map<String, Object> entries;
 	public static MDatabase mDB;
@@ -244,14 +248,14 @@ public final class ChatPlugin extends JavaPlugin {
 		entries.entrySet().stream().forEach((entry) -> {
 			final Entry value = entry.getValue();
 			final ItemStack item = value.item();
+			if (entry.getKey().equals(player.getName()))
+				return;
 			value.slots().forEach(slot -> {
 				Bukkit.getScheduler().runTask(getInstance(), () -> {
 					final ItemMeta meta = item.getItemMeta();
-					meta.setDisplayName(
-							PlaceholderAPI.setPlaceholders(player, ColorUtils.C(player, value.displayName())));
-					meta.setLore(value.lore().stream()
-							.map(each -> PlaceholderAPI.setPlaceholders(player, ColorUtils.C(player, each)))
-							.collect(Collectors.toList()));
+					meta.setDisplayName(ColorUtils.C(player, value.displayName()));
+					meta.setLore(
+							value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
 					item.setItemMeta(meta);
 					inv.setItem(slot, item);
 				});
@@ -263,11 +267,9 @@ public final class ChatPlugin extends JavaPlugin {
 	 * {pageNumber, items(the slot, and player name actually)} actually I can remove
 	 * this <> but my IDE throws a warning
 	 */
-	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_MUTEINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_INVITEINVS = new ConcurrentHashMap<>();
-	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_GROUPINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_REQUESTINVS = new ConcurrentHashMap<>();
-	
+
 	private static void onPlayerRepeat(UUID senderUUID, int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
 			List<Integer> emptySlots, AtomicInteger pageNumber,
 			ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Gui gui,
@@ -276,7 +278,8 @@ public final class ChatPlugin extends JavaPlugin {
 		final AtomicReference<Inventory> firstInventory = new AtomicReference<>();
 		final Player player = Bukkit.getPlayer(senderUUID);
 		if (checkingArea < emptySlotsSize) {
-			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(), ColorUtils.C(player, gui.getTitle()));
+			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(),
+					ColorUtils.C(player, gui.getTitle()));
 			normalFiller(Bukkit.getPlayer(senderUUID), gui.getEntries(), inventory);
 			outer: for (UUID playerUUID : cloneStack.reversed())
 				for (int emptySlot : emptySlots) {
@@ -284,7 +287,8 @@ public final class ChatPlugin extends JavaPlugin {
 					final ItemSaver playerHead = getSkullOfOwner(pUUID);
 					final ItemStack item = playerHead.item();
 					final ItemMeta meta = item.getItemMeta();
-					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toUnmodifiableList());
+					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each))
+							.collect(Collectors.toUnmodifiableList());
 					Bukkit.getScheduler().runTask(getInstance(), () -> {
 						meta.setLore(gLore);
 						meta.setDisplayName(ColorUtils.C(player, "&7" + pUUID.getDisplayName()));
@@ -303,7 +307,8 @@ public final class ChatPlugin extends JavaPlugin {
 			});
 
 		} else { // checkingArea >= emptySlotsSize
-			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(), ColorUtils.C(player, gui.getTitle()));
+			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(),
+					ColorUtils.C(player, gui.getTitle()));
 			normalFiller(player, gui.getEntries(), inventory);
 			outer: for (UUID playerUUID : cloneStack)
 				for (int emptySlot : emptySlots) {
@@ -311,7 +316,8 @@ public final class ChatPlugin extends JavaPlugin {
 					final ItemSaver playerHead = getSkullOfOwner(pUUID);
 					final ItemStack item = playerHead.item();
 					final ItemMeta meta = item.getItemMeta();
-					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toUnmodifiableList());
+					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each))
+							.collect(Collectors.toUnmodifiableList());
 					Bukkit.getScheduler().runTask(getInstance(), () -> {
 						meta.setLore(gLore);
 						meta.setDisplayName(ColorUtils.C(player, "&7" + pUUID.getDisplayName()));
@@ -333,12 +339,13 @@ public final class ChatPlugin extends JavaPlugin {
 		}
 	}
 
-	public static void onPlayerRequest(Player player, CompletableFuture<Inventory> callback) {
+	public static void onPlayerRequest(Player player, CompletableFuture<Inventory> callback, boolean open) {
 		Optional<ConcurrentHashMap<Integer, Inventory>> map = Optional
 				.ofNullable(STORED_REQUESTINVS.get(player.getUniqueId()));
 		if (map.isPresent()) {
-			CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
-					.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
+			if (open)
+				CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
+						.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
 			return;
 		}
 		List<Integer> emptySlots = iInvite.getEmpties();
@@ -375,12 +382,13 @@ public final class ChatPlugin extends JavaPlugin {
 
 	}
 
-	public static void onPlayerInvite(Player player, CompletableFuture<Inventory> callback) {
+	public static void onPlayerInvite(Player player, CompletableFuture<Inventory> callback, boolean check) {
 		Optional<ConcurrentHashMap<Integer, Inventory>> map = Optional
 				.ofNullable(STORED_INVITEINVS.get(player.getUniqueId()));
 		if (map.isPresent()) {
-			CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
-					.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
+			if (check)
+				CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
+						.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
 			return;
 		}
 		List<Integer> emptySlots = iInvite.getEmpties();
@@ -394,26 +402,94 @@ public final class ChatPlugin extends JavaPlugin {
 				STORED_INVITEINVS, iInvite, callback);
 	}
 
-	public static void onPlayerMute(Player player, CompletableFuture<Inventory> callback) {
-		Optional<ConcurrentHashMap<Integer, Inventory>> map = Optional
-				.ofNullable(STORED_MUTEINVS.get(player.getUniqueId()));
-		if (map.isPresent()) {
-			CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
-					.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
-			return;
-		}
-		List<Integer> emptySlots = iMute.getEmpties();
-		int emptySlotsSize = emptySlots.size();
-		AtomicInteger pageNumber = new AtomicInteger(0);
-		MDatabase.getPlayerGroup(player.getUniqueId())
-				.thenCompose(playerGroup -> MDatabase.getPlayersByGroup(playerGroup)).thenAccept(playerUUIDStack -> {
-					Stack<UUID> cloneStack = playerUUIDStack;
-					int playersGroupsSize = cloneStack.size();
-					int checkingArea = playersGroupsSize - emptySlotsSize;
-					onPlayerRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots,
-							pageNumber, STORED_MUTEINVS, iMute, callback);
+	public static final ConcurrentHashMap<String, ConcurrentLinkedDeque<Inventory>> STORED_MUTEINVS = new ConcurrentHashMap<>();
 
-				});
+	private static void onPlayerMuteRepeat(String groupName, List<UUID> cloneList, List<Integer> empties,
+			AtomicInteger checkingArea, int emptySlots, AtomicReference<Optional<ConcurrentLinkedDeque<Inventory>>> opt,
+			CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> callback) {
+		final ConcurrentLinkedDeque<Inventory> inventories = new ConcurrentLinkedDeque<Inventory>();
+		final Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
+		if (checkingArea.get() < emptySlots) {
+			Iterator<Integer> iterator = empties.iterator();
+			for (UUID eachUUID : cloneList)
+				if (iterator.hasNext())
+					Bukkit.getScheduler().runTask(plugin, () -> {
+						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
+						final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
+						final ItemStack item = itemSave.item();
+						final ItemMeta meta = item.getItemMeta();
+						if (skullPlayer.isOnline()) {
+							normalFiller(skullPlayer, iMute.getEntries(), inventory);
+							meta.setLore(iMute.getLore().stream().map(each -> ColorUtils.C(skullPlayer, each))
+									.collect(Collectors.toUnmodifiableList()));
+							meta.setDisplayName(ColorUtils.C(skullPlayer, "&7" + skullPlayer.getName()));
+						}
+						item.setItemMeta(meta);
+						final int slot = iterator.next();
+						inventory.setItem(slot, item);
+						iMute.getEntries().put(skullPlayer.getName(), new Entry(null, item, null, 0, null, null));
+					});
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				inventories.addLast(inventory);
+				STORED_MUTEINVS.put(groupName, inventories);
+				if (STORED_MUTEINVS.get(groupName) == null)
+					System.out.println("its null");
+				opt.lazySet(Optional.ofNullable(STORED_MUTEINVS.get(groupName)));
+				callback.complete(opt.get());
+				System.out.println("mother fucker inventory is in fucking kos");
+			});
+		} else {
+			Iterator<Integer> iterator = empties.iterator();
+			for (UUID eachUUID : cloneList)
+				if (iterator.hasNext())
+					Bukkit.getScheduler().runTask(plugin, () -> {
+						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
+						final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
+						final ItemStack item = itemSave.item();
+						final ItemMeta meta = item.getItemMeta();
+						if (skullPlayer.isOnline()) {
+							normalFiller(skullPlayer, iMute.getEntries(), inventory);
+							meta.setLore(iMute.getLore().stream().map(each -> ColorUtils.C(skullPlayer, each))
+									.collect(Collectors.toUnmodifiableList()));
+							meta.setDisplayName(ColorUtils.C(skullPlayer, "&7" + skullPlayer.getName()));
+						}
+						item.setItemMeta(meta);
+						final int slot = iterator.next();
+						inventory.setItem(slot, item);
+						iMute.getEntries().put(skullPlayer.getName(), new Entry(null, item, null, 0, null, null));
+					});
+			for (int remove = 1; remove < emptySlots; remove++)
+				cloneList.removeLast();
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				checkingArea.lazySet(checkingArea.get() - emptySlots);
+				inventories.offer(inventory);
+			});
+			onPlayerMuteRepeat(groupName, cloneList, empties, checkingArea, emptySlots, opt, callback);
+		}
+	}
+
+	public static CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> onPlayerMute(String groupName,
+			boolean update, CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> callback) {
+		AtomicReference<Optional<ConcurrentLinkedDeque<Inventory>>> opt = new AtomicReference<>(
+				Optional.ofNullable(STORED_MUTEINVS.get(groupName)));
+		System.out.println("onPlayerMute optional");
+		if (!update)
+			callback.complete(opt.get());
+		else {
+			MDatabase.getPlayersByGroup(groupName).thenAccept(players -> {
+				final List<UUID> cloneList = players;
+				final int playersSize = cloneList.size();
+				final List<Integer> empties = Collections.unmodifiableList(iMute.getEmpties());
+				final int emptySlots = empties.size();
+				AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
+				onPlayerMuteRepeat(groupName, cloneList, empties, checkingArea, emptySlots, opt, callback);
+			});
+		}
+		return callback;
+	}
+
+	public static void updateGui(String groupName) {
+		onPlayerMute(groupName, true, new CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>>());
 	}
 
 	private void createConfig() {

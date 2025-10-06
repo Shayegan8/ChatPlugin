@@ -31,7 +31,7 @@ public class Grouping implements Listener {
 		final String msg = e.getMessage();
 		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
 			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
-					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equalsIgnoreCase).thenCompose((condition) -> {
+					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equals).thenCompose((condition) -> {
 						if (condition) {
 							final String formatedMSG = ColorUtils.C(e.getPlayer(), (String) ChatPlugin.entries
 									.getOrDefault("chatp.playerchat", "&e%player_name% %chatp_group%&r&8: &7{msg}"));
@@ -57,19 +57,26 @@ public class Grouping implements Listener {
 				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> e.setCancelled(true));
 			}
 		});
+
 	}
 
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		final Player player = e.getPlayer();
 		final UUID uuid = player.getUniqueId();
-		MDatabase.playerHasGroup(uuid).thenAccept(has -> {
-			if (has)
-				return;
+		MDatabase.playerHasGroup(uuid).thenAccept(hasGroup -> {
 			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-				MDatabase.setPlayerGroup(uuid, "none");
-				MDatabase.setPlayerTag(uuid, "none");
-				MDatabase.setPlayerInGroup(uuid, false);
+				if (!hasGroup) {
+					MDatabase.setPlayerGroup(uuid, "none");
+					MDatabase.setPlayerTag(uuid, "none");
+					MDatabase.setPlayerInGroup(uuid, false);
+				}
+			});
+		}).thenCompose(condition -> MDatabase.isPlayerInGroup(uuid)).thenAccept(inGroup -> {
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+				if (inGroup)
+					MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler()
+							.runTask(ChatPlugin.getInstance(), () -> ChatPlugin.updateGui(group)));
 			});
 		});
 	}

@@ -1,12 +1,10 @@
 package shayegan8.github.events;
 
-import java.util.List;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -32,13 +30,20 @@ public class GuiListener implements Listener {
 			ChatPlugin.iMenu.getEntries().keySet().stream()
 					.filter(key -> ChatPlugin.iMenu.getEntries().get(key).item().equals(e.getCurrentItem()))
 					.forEach(key -> {
-						CompletableFuture<Inventory> callback = new CompletableFuture<>();
+						CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> callback = new CompletableFuture<>();
+						System.out.println("clicked key: " + key);
 						switch (key) {
 						case "gui.menu.list.a":
-							ChatPlugin.onPlayerMute(player, callback);
-							callback.thenAccept(firstInventory -> {
-								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-										() -> player.openInventory(firstInventory));
+							MDatabase.getPlayerGroup(player.getUniqueId())
+									.thenAccept(group -> ChatPlugin.onPlayerMute(group, true, callback));
+							System.out.println("mute callback");
+							callback.thenAccept(optInventory -> {
+								System.out.println("optional inventory");
+								optInventory.ifPresent(inventoryDeque -> {
+									System.out.println("this motherfucker is present");
+									final Inventory inv = inventoryDeque.getLast();
+									player.openInventory(inv);
+								});
 							});
 							break;
 						case "gui.menu.list.b":
@@ -49,73 +54,81 @@ public class GuiListener implements Listener {
 							player.closeInventory();
 							break;
 						case "gui.menu.list.d":
-							ChatPlugin.onPlayerInvite(player, callback);
-							callback.thenAccept(firstInventory -> {
-								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-										() -> player.openInventory(firstInventory));
-							});
 							break;
 						case "gui.menu.list.e":
-							ChatPlugin.onPlayerRequest(player, callback);
-							callback.thenAccept(firstInventory -> {
-								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-										() -> player.openInventory(firstInventory));
-							});
 							break;
 						case "gui.menu.list.f":
-							ChatPlugin.onPlayerDelete(player, callback);
 							break;
 						}
 					});
 	}
 
-	private void inventoryHandler(InventoryClickEvent e, String nextButton, String previousButton,
-			ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Gui gui) {
+	private void inventoryHandler(InventoryClickEvent e, String groupName, String nextButton, String previousButton,
+			Gui gui) {
 		final Player player = (Player) e.getWhoClicked();
-		final ConcurrentHashMap<Integer, Inventory> mapCheck = collection.get(player.getUniqueId());
-		if (mapCheck == null || mapCheck.get(0) == null)
+		final ConcurrentLinkedDeque<Inventory> inventories = ChatPlugin.STORED_MUTEINVS.get(groupName);
+		if (inventories == null || inventories.getLast() == null) {
+			System.out.println("nulle");
 			return;
-		final Inventory openInventory = player.getOpenInventory().getTopInventory();
-		final Inventory inv = collection.get(player.getUniqueId()).get(0);
-		if (!openInventory.equals(inv))
+		}
+		Inventory openInventory = player.getOpenInventory().getTopInventory();
+		if (!openInventory.equals(inventories.getLast())) {
+			System.out.println("mosavi nist");
 			return;
-		e.setCancelled(true);
-		if (e.isRightClick()) {
+		}
+		System.out.println("cancelled bitch");
+		if (e.isRightClick() || e.isLeftClick()) {
+			e.setCancelled(true);
+			System.out.println("yes jerk");
+			System.out.println(gui.getEntries().size());
+			gui.getEntries().entrySet().stream().forEach(entry -> {
+				System.out.println("key: " + entry.getKey() + ", value:" + entry.getValue().materialName());
+			});
 			gui.getEntries().keySet().stream()
 					.filter(key -> gui.getEntries().get(key).item().equals(e.getCurrentItem())).forEach(key -> {
-						if (key.equalsIgnoreCase(nextButton)) {
-							inventoryPage(collection, player, openInventory, true);
-						} else if (key.equalsIgnoreCase(previousButton)) {
-							inventoryPage(collection, player, openInventory, false);
+						System.out.println(key);
+						if (key.equals(nextButton)) {
+							System.out.println("next");
+							inventoryPage(inventories, player, openInventory, inventories.iterator());
+						} else if (key.equals(previousButton)) {
+							System.out.println("previous");
+							inventoryPage(inventories, player, openInventory, inventories.descendingIterator());
 						} else {
+							System.out.println("switch handler");
 							switchHandler(e, gui, player, nextButton, previousButton);
 						}
 					});
 		}
 	}
 
-	private void inventoryPage(ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Player player,
-			Inventory openInventory, boolean increament) {
-		AtomicInteger atomI = new AtomicInteger(0);
-		final List<ConcurrentHashMap<Integer, Inventory>> result = collection.values().stream()
-				.filter(entry -> entry.get(atomI.getAndIncrement()).equals(openInventory)).collect(Collectors.toList());
-		result.getFirst().entrySet().stream().forEach(entry -> {
-			int currentIndex = entry.getKey();
-			Optional<Inventory> currentInv = Optional.ofNullable(
-					collection.get(player.getUniqueId()).get(increament ? currentIndex + 1 : currentIndex - 1));
-			currentInv.ifPresentOrElse(inventory -> {
-				player.openInventory(inventory);
-			}, () -> {
-				ChatPlugin.sendACMSG(player, "chatp.noMorePage", "&cNo other pages found");
-				player.closeInventory();
-			});
-		});
+	private void inventoryPage(ConcurrentLinkedDeque<Inventory> collection, Player player, Inventory openInventory,
+			Iterator<Inventory> inventories) {
+
+		CompletableFuture.runAsync(() -> {
+			while (inventories.hasNext()) {
+				System.out.println("it has next");
+				Inventory inventory = inventories.next();
+				if (inventory.equals(openInventory)) {
+					if (inventories.hasNext()) {
+						System.out.println("it has next??");
+						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+								() -> player.openInventory(inventories.next()));
+						break;
+					} else {
+						System.out.println("it hasnt next??");
+						ChatPlugin.sendCMSG(player, "chatp.noMorePage", "&cNo other pages found");
+						player.closeInventory();
+					}
+				}
+			}
+		}, ChatPlugin.EVIRTUAL);
 	}
 
 	private void switchHandler(InventoryClickEvent e, Gui gui, Player player, String nextButton,
 			String previousButton) {
 		ItemStack item = e.getCurrentItem();
 		int slot = e.getSlot();
+		System.out.println(gui.getName());
 		if (gui.getEmpties().contains(slot)) {
 			System.out.println("kir khar");
 			switch (gui.getName()) {
@@ -137,22 +150,11 @@ public class GuiListener implements Listener {
 
 	@EventHandler
 	public void mute(InventoryClickEvent e) {
-		inventoryHandler(e, "gui.mute.list.next", "gui.mute.list.previous", ChatPlugin.STORED_MUTEINVS,
-				ChatPlugin.iMute);
+		final UUID uuid = ((Player) e.getWhoClicked()).getUniqueId();
+		MDatabase.getPlayerGroup(uuid).thenAccept(group -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+				() -> inventoryHandler(e, group, "gui.mute.list.next", "gui.mute.list.previous", ChatPlugin.iMute)));
 	}
-
-	@EventHandler
-	public void invite(InventoryClickEvent e) {
-		inventoryHandler(e, "gui.invite.list.next", "gui.invite.list.previous", ChatPlugin.STORED_INVITEINVS,
-				ChatPlugin.iInvite);
-	}
-
-	@EventHandler
-	public void request(InventoryClickEvent e) {
-		inventoryHandler(e, "gui.request.list.next", "gui.request.list.previous", ChatPlugin.STORED_REQUESTINVS,
-				ChatPlugin.iRequest);
-	}
-
+	
 	@EventHandler
 	public void delete(InventoryClickEvent e) {
 		final Player player = (Player) e.getWhoClicked();

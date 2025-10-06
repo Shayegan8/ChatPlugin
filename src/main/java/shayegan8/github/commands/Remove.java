@@ -61,7 +61,9 @@ public class Remove extends CommandManager {
 							MDatabase.setPlayerGroup(argUUID, "none");
 							MDatabase.setPlayerTag(argUUID, "none");
 							MDatabase.setPlayerInGroup(argUUID, false);
-							ChatPlugin.sendACMSG(player, "chatp.remove.removed", "%player_name% &asuccessfully removed");
+							MDatabase.getPlayerGroup(senderUUID).thenAccept(group -> ChatPlugin.updateGui(group));
+							ChatPlugin.sendACMSG(player, "chatp.remove.removed",
+									"%player_name% &asuccessfully removed");
 						});
 					} else
 						ChatPlugin.sendCMSG(player, "chatp.remove.cant", "&cYou are not admin or staff");
