@@ -168,14 +168,12 @@ public class MDatabase {
 				PreparedStatement pState = ChatPlugin.mDB.getConnection()
 						.prepareStatement("SELECT groupName FROM players WHERE playerUUID = ?");
 				pState.setBytes(1, convertToBlob(playerUUID));
-				var has = false;
-				var query = pState.executeQuery();
-				while (!query.next())
-					has = true;
-				return has;
+				try(ResultSet query = pState.executeQuery()) {
+					return query.next();
+				}
 			} catch (SQLException e) {
-				throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-
+				e.printStackTrace();
+				return false;
 			}
 		}, ChatPlugin.EVIRTUAL);
 	}
