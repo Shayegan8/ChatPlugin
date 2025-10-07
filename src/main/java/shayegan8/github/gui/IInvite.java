@@ -13,14 +13,20 @@ import org.bukkit.inventory.ItemStack;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
-@Getter
-public final class IInvite extends Gui {
-
+public final class IInvite {
+	
+	@Getter
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
+	@Getter
 	private final List<Integer> empties;
+	@Getter
 	private final String title;
+	@Getter
 	private final List<String> lore;
+	@Getter
 	private final int size;
+	
+	private final static String NAME = "invite";
 
 	public IInvite() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.invite.emptyLore").stream()
@@ -43,11 +49,6 @@ public final class IInvite extends Gui {
 				item = new ItemStack(Material.valueOf(materialName), amount);
 			entries.put(newStr, new Entry(materialName, item, displayName, amount, slots, lore));
 		});
-	}
-
-	@Override
-	public String getName() {
-		return "invite";
 	}
 
 }

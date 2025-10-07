@@ -13,7 +13,7 @@ import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
 @Getter
-public final class IDelete extends Gui {
+public final class IDelete {
 
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
 	private final String title;

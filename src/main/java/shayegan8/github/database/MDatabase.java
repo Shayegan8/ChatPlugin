@@ -45,7 +45,7 @@ public class MDatabase {
 				break;
 			}
 			PreparedStatement pStatement = connection
-					.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT DEFAULT 'none');");
+					.prepareStatement("CREATE TABLE IF NOT EXISTS groups (groupName TEXT);");
 			pStatement.executeUpdate();
 			pStatement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS players "
 					+ "(groupName TEXT references groups(groupName) ON DELETE SET DEFAULT,"

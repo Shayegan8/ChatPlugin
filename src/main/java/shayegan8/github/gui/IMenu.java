@@ -14,13 +14,21 @@ import org.bukkit.inventory.ItemStack;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
-@Getter
-public final class IMenu extends Gui {
+public final class IMenu {
 
+	@Getter	
 	private final Inventory inv;
+	
+	@Getter
 	private final int size;
+	
+	@Getter
 	private final String title;
+	
+	@Getter
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
+	
+	public final static String NAME = "menu";
 
 	public IMenu() {
 		title = ChatPlugin.configuration_menu.getString("gui.menu.title", "&cChatPlugin menu");
@@ -41,11 +49,5 @@ public final class IMenu extends Gui {
 				item = new ItemStack(Material.valueOf(materialName), amount);
 			entries.put(newStr, new Entry(materialName, item, displayName, amount, slots, lore));
 		});
-	}
-	
-
-	@Override
-	public String getName() {
-		return "menu";
 	}
 }

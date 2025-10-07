@@ -246,6 +246,7 @@ public final class ChatPlugin extends JavaPlugin {
 		entries.entrySet().stream().forEach((entry) -> {
 			final Entry value = entry.getValue();
 			final ItemStack item = value.item();
+			System.out.println(entry.getKey());
 			value.slots().forEach(slot -> {
 				Bukkit.getScheduler().runTask(getInstance(), () -> {
 					final ItemMeta meta = item.getItemMeta();
@@ -277,9 +278,9 @@ public final class ChatPlugin extends JavaPlugin {
 			for (UUID eachUUID : cloneList)
 				if (iterator.hasNext())
 					Bukkit.getScheduler().runTask(plugin, () -> {
-						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
-						if (!skullPlayer.isOnline())
+						if (Bukkit.getPlayer(eachUUID) == null)
 							return;
+						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
 						final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
 						final ItemStack item = itemSave.item();
 						final ItemMeta meta = item.getItemMeta();
@@ -298,14 +299,19 @@ public final class ChatPlugin extends JavaPlugin {
 			AtomicInteger checkingArea, int emptySlots, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback) {
 		final ConcurrentLinkedDeque<Inventory> inventories = new ConcurrentLinkedDeque<Inventory>();
 		Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
+		System.out.println("variable onPlayerRepeat");
 		if (checkingArea.get() < emptySlots) {
+			System.out.println("first condition");
 			repeatIteration(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				inventories.addLast(inventory);
+				System.out.println("main thread onPlayerRepeat");
 				STORED_MUTEINVS.put(groupName, inventories);
 				callback.complete(STORED_MUTEINVS.get(groupName));
+				System.out.println("fucked");
 			});
 		} else {
+			System.out.println("second condition");
 			repeatIteration(empties, cloneList, inventory);
 			for (int remove = 1; remove < emptySlots; remove++)
 				cloneList.removeLast();
@@ -320,23 +326,25 @@ public final class ChatPlugin extends JavaPlugin {
 	public static void onPlayerMute(Player player, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback,
 			boolean update) {
 		MDatabase.getPlayerGroup(player.getUniqueId()).thenAccept(group -> {
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				final Optional<ConcurrentLinkedDeque<Inventory>> opt = Optional.ofNullable(STORED_MUTEINVS.get(group));
-				if (opt.isPresent() && !update)
-					callback.complete(opt.get());
-				else if (update) {
-					MDatabase.getPlayersByGroup(group).thenAccept(players -> {
-						final List<UUID> cloneList = players;
-						final int playersSize = cloneList.size();
-						final List<Integer> empties = !group.equals("none")
-								? Collections.unmodifiableList(iMute.getEmpties())
-								: Collections.unmodifiableList(Arrays.asList());
-						final int emptySlots = empties.size();
-						AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
-						onPlayerRepeat(group, cloneList, empties, checkingArea, emptySlots, callback);
-					});
-				}
-			});
+			System.out.println("player group thread");
+			System.out.println("main thread");
+			final Optional<ConcurrentLinkedDeque<Inventory>> opt = Optional.ofNullable(STORED_MUTEINVS.get(group));
+			if (opt.isPresent() && !update) {
+				System.out.println("running this part");
+				callback.complete(opt.get());
+			} else {
+				System.out.println("no this part");
+				MDatabase.getPlayersByGroup(group).thenAccept(players -> {
+					System.out.println("get players by group thread");
+					final List<UUID> cloneList = players;
+					final int playersSize = cloneList.size();
+					final List<Integer> empties = Collections.unmodifiableList(iMute.getEmpties());
+					final int emptySlots = empties.size();
+					AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
+					System.out.println("variables");
+					onPlayerRepeat(group, cloneList, empties, checkingArea, emptySlots, callback);
+				});
+			}
 		});
 	}
 
@@ -346,24 +354,23 @@ public final class ChatPlugin extends JavaPlugin {
 			Iterator<Integer> iterator = empties.iterator();
 			for (String eachGroup : cloneList)
 				if (iterator.hasNext()) {
-					Bukkit.getScheduler().runTask(plugin, () -> {
-						MDatabase.getGroupAdmin(eachGroup).thenAccept(adminUUID -> {
-							Bukkit.getScheduler().runTask(getInstance(), () -> {
-								final Player skullPlayer = Bukkit.getPlayer(adminUUID);
-								if (!skullPlayer.isOnline())
-									return;
-								final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
-								final ItemStack item = itemSave.item();
-								final ItemMeta meta = item.getItemMeta();
-								meta.setLore(iRequest.getLore().stream().map(each -> ColorUtils.B(each))
-										.collect(Collectors.toUnmodifiableList()));
-								meta.setDisplayName(ColorUtils.B("&7" + skullPlayer.getName()));
-								item.setItemMeta(meta);
-								final int slot = iterator.next();
-								inventory.setItem(slot, item);
-								iRequest.getEntries().put(skullPlayer.getName(),
-										new Entry(null, item, null, 0, null, null));
-							});
+					MDatabase.getGroupAdmin(eachGroup).thenAccept(adminUUID -> {
+						Bukkit.getScheduler().runTask(getInstance(), () -> {
+							
+							final Player skullPlayer = Bukkit.getPlayer(adminUUID);
+							if (!skullPlayer.isOnline())
+								return;
+							final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
+							final ItemStack item = itemSave.item();
+							final ItemMeta meta = item.getItemMeta();
+							meta.setLore(iRequest.getLore().stream().map(each -> ColorUtils.B(each))
+									.collect(Collectors.toUnmodifiableList()));
+							meta.setDisplayName(ColorUtils.B("&7" + skullPlayer.getName()));
+							item.setItemMeta(meta);
+							final int slot = iterator.next();
+							inventory.setItem(slot, item);
+							iRequest.getEntries().put(skullPlayer.getName(),
+									new Entry(null, item, null, 0, null, null));
 						});
 					});
 				}
@@ -393,19 +400,17 @@ public final class ChatPlugin extends JavaPlugin {
 
 	public static void onPlayerRequest(CompletableFuture<Inventory> callback, boolean update) {
 		MDatabase.getGroupList().thenAccept(groupList -> {
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				if (!STORED_REQUESTINVS.isEmpty() && !update)
-					callback.complete(STORED_REQUESTINVS.get(0));
-				else if (update) {
-					final List<String> cloneList = groupList;
-					final int playersSize = cloneList.size();
-					final List<Integer> empties = Collections.unmodifiableList(iRequest.getEmpties());
-					final int emptySlots = empties.size();
-					AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
-					AtomicInteger pageNumber = new AtomicInteger(0);
-					onPlayerRepeatRequest(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
-				}
-			});
+			if (!STORED_REQUESTINVS.isEmpty() && !update)
+				callback.complete(STORED_REQUESTINVS.get(0));
+			else {
+				final List<String> cloneList = groupList;
+				final int playersSize = cloneList.size();
+				final List<Integer> empties = Collections.unmodifiableList(iRequest.getEmpties());
+				final int emptySlots = empties.size();
+				AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
+				AtomicInteger pageNumber = new AtomicInteger(0);
+				onPlayerRepeatRequest(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
+			}
 		});
 	}
 
@@ -456,7 +461,7 @@ public final class ChatPlugin extends JavaPlugin {
 	public static void onPlayerInvite(CompletableFuture<Inventory> callback, boolean update) {
 		if (!STORED_INVITEINVS.isEmpty() && !update)
 			callback.complete(STORED_INVITEINVS.get(0));
-		else if (update) {
+		else {
 			final List<Player> cloneList = ImmutableList.copyOf(Bukkit.getOnlinePlayers());
 			final int playersSize = cloneList.size();
 			final List<Integer> empties = Collections.unmodifiableList(iRequest.getEmpties());

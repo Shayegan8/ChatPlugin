@@ -56,6 +56,8 @@ public class GuiListener implements Listener {
 							});
 						}
 					});
+		} else if(CONTAIN.get()) {
+			System.out.println("yes");
 		}
 	}
 
