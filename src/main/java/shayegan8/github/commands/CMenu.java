@@ -1,10 +1,8 @@
 package shayegan8.github.commands;
 
-import java.util.concurrent.CompletableFuture;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 
 import shayegan8.github.ChatPlugin;
 
@@ -21,7 +19,6 @@ public class CMenu extends CommandManager {
 			ChatPlugin.sendABMSG(sender, "chatp.cmenu.notPlayer", "&cYou should be a player");
 			return;
 		}
-		CompletableFuture<Inventory> compt = new CompletableFuture<>();
-		ChatPlugin.onPlayerMenu(player, ChatPlugin.iMenu.getEntries(), compt);
+		player.openInventory(ChatPlugin.onPlayerMenu());
 	}
 }

@@ -58,7 +58,7 @@ public class Accept extends CommandManager {
 							MDatabase.setPlayerRequest(argUUID, "none");
 							ChatPlugin.sendACMSG(argPlayer, "chatp.accept.fucked",
 									"&eYou are now in %chatp_group% group");
-							ChatPlugin.updateGui(senderGroup);
+							ChatPlugin.updateMute(player);
 						});
 					});
 				});

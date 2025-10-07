@@ -44,7 +44,7 @@ public class Join extends CommandManager {
 						ls.forEach(eachUUID -> {
 							if(!Bukkit.getPlayer(eachUUID).isOnline())
 								return;
-							ChatPlugin.updateGui(args[0]);
+							ChatPlugin.updateMute(player);
 						});
 					});
 				});

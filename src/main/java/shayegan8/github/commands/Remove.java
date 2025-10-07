@@ -61,7 +61,7 @@ public class Remove extends CommandManager {
 							MDatabase.setPlayerGroup(argUUID, "none");
 							MDatabase.setPlayerTag(argUUID, "none");
 							MDatabase.setPlayerInGroup(argUUID, false);
-							MDatabase.getPlayerGroup(senderUUID).thenAccept(group -> ChatPlugin.updateGui(group));
+							ChatPlugin.updateMute(player);
 							ChatPlugin.sendACMSG(player, "chatp.remove.removed",
 									"%player_name% &asuccessfully removed");
 						});

@@ -69,7 +69,8 @@ public class Group extends CommandManager {
 						MDatabase.setPlayerTag(uuid, "admin");
 						Placeholders.updateTag(uuid);
 						MDatabase.setPlayerGroup(uuid, args[1]);
-						ChatPlugin.updateGui(args[1]);
+						ChatPlugin.updateMute(player);
+						ChatPlugin.updateRequest();
 						ChatPlugin.sendACMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");
 
 					});
@@ -108,7 +109,8 @@ public class Group extends CommandManager {
 										Placeholders.updateTag(eachUUID);
 										MDatabase.setPlayerGroup(eachUUID, "none");
 										Placeholders.updateGroup(eachUUID);
-										ChatPlugin.updateGui(args[1]);
+										ChatPlugin.STORED_MUTEINVS.remove(args[1]);
+										ChatPlugin.updateRequest();
 									});
 								});
 							});

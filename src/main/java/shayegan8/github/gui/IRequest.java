@@ -29,6 +29,7 @@ public final class IRequest extends Gui {
 		size = ChatPlugin.configuration_menu.getInt("gui.request.size", 54);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.request.list").getKeys(false).forEach(each -> {
 			String newStr = "gui.request.list." + each;
+			System.out.println(newStr);
 			ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
 			String materialName = section.getString("material");
 			int amount = section.getInt("amount", 1);

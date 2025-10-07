@@ -49,16 +49,23 @@ public class Quit extends CommandManager {
 									MDatabase.setPlayerTag(eachUUID, "none");
 									MDatabase.setPlayerGroup(eachUUID, "none");
 									MDatabase.setPlayerInGroup(eachUUID, false);
-									ChatPlugin.updateGui(group);
+									ChatPlugin.STORED_MUTEINVS.remove(group);
+
 									ChatPlugin.sendACMSG(Bukkit.getPlayer(eachUUID), "chatp.quit.quit",
 											"&eYou are no longer in this group");
 								}))));
 			else {
-				MDatabase.setPlayerTag(senderUUID, "none");
-				MDatabase.setPlayerGroup(senderUUID, "none");
-				MDatabase.setPlayerInGroup(senderUUID, false);
-				MDatabase.getPlayerGroup(senderUUID).thenAccept(group -> ChatPlugin.updateGui(group));
-				ChatPlugin.sendCMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
+				MDatabase.getPlayerGroup(senderUUID).thenCompose(playerGroup -> MDatabase.getGroupAdmin(playerGroup))
+						.thenAccept(groupAdmin -> {
+							Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+								MDatabase.setPlayerTag(senderUUID, "none");
+								MDatabase.setPlayerGroup(senderUUID, "none");
+								MDatabase.setPlayerInGroup(senderUUID, false);
+								ChatPlugin.updateMute(Bukkit.getPlayer(groupAdmin));
+								ChatPlugin.sendACMSG(player, "chatp.quit.quit", "&eYou are no longer in this group");
+
+							});
+						});
 			}
 		});
 	}

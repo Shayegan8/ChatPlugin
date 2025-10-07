@@ -28,12 +28,13 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 
+import com.google.common.collect.ImmutableList;
+
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.*;
 import shayegan8.github.expansions.Placeholders;
 import shayegan8.github.gui.Entry;
-import shayegan8.github.gui.Gui;
 import shayegan8.github.gui.IDelete;
 import shayegan8.github.gui.IInvite;
 import shayegan8.github.gui.IMenu;
@@ -52,20 +53,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Plugin(name = "ChatPlugin", version = "1.0.0")
@@ -147,6 +148,11 @@ public final class ChatPlugin extends JavaPlugin {
 		return plugin;
 	}
 
+	public static Inventory storedMenu;
+	public static Inventory storedDelete;
+	private static final AtomicBoolean CALL_ONCEMENU = new AtomicBoolean(false);
+	private static final AtomicBoolean CALL_ONCEDELETE = new AtomicBoolean(false);
+
 	@SneakyThrows
 	@Override
 	public void onEnable() {
@@ -161,10 +167,12 @@ public final class ChatPlugin extends JavaPlugin {
 		mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
 		getLogger().info("Registering guis...");
 		iMenu = new IMenu();
+		storedMenu = Bukkit.createInventory(null, iMenu.getSize(), iMenu.getTitle());
+		iDelete = new IDelete();
+		storedDelete = Bukkit.createInventory(null, iDelete.getSize(), iDelete.getTitle());
 		iMute = new IMute();
 		iInvite = new IInvite();
 		iRequest = new IRequest();
-		iDelete = new IDelete();
 		getLogger().info("Registering events...");
 		getServer().getPluginManager().registerEvents(new Grouping(), this);
 		getServer().getPluginManager().registerEvents(new GuiListener(), this);
@@ -226,36 +234,23 @@ public final class ChatPlugin extends JavaPlugin {
 		return new ItemSaver(head, player);
 	}
 
-	public static final Map<UUID, Inventory> STORED_MENUINVS = new ConcurrentHashMap<>();
-	public static final Map<UUID, Inventory> STORED_DELETEINVS = new ConcurrentHashMap<>();
-
-	public static void onPlayerMenu(Player player, Map<String, Entry> entries, CompletableFuture<Inventory> callback) {
-		final Optional<Inventory> playerInv = Optional.ofNullable(STORED_MENUINVS.get(player.getUniqueId()));
-		if (playerInv.isPresent()) {
-			CompletableFuture.supplyAsync(() -> playerInv.get()).thenAccept(firstInventory -> Bukkit.getScheduler()
-					.runTask(getInstance(), () -> player.openInventory(firstInventory)));
-			return;
-		}
-		final Inventory inventory = Bukkit.createInventory(null, iMenu.getSize());
-		normalFiller(player, entries, inventory);
-		STORED_MENUINVS.put(player.getUniqueId(), inventory);
-		callback.complete(inventory);
-		callback.thenAccept(firstInventory -> Bukkit.getScheduler().runTask(getInstance(),
-				() -> player.openInventory(firstInventory)));
+	public static Inventory onPlayerMenu() {
+		if (CALL_ONCEMENU.get())
+			return storedMenu;
+		normalFiller(iMenu.getEntries(), storedMenu);
+		CALL_ONCEMENU.lazySet(true);
+		return storedMenu;
 	}
 
-	private static void normalFiller(Player player, Map<String, Entry> entries, Inventory inv) {
+	private static void normalFiller(Map<String, Entry> entries, Inventory inv) {
 		entries.entrySet().stream().forEach((entry) -> {
 			final Entry value = entry.getValue();
 			final ItemStack item = value.item();
-			if (entry.getKey().equals(player.getName()))
-				return;
 			value.slots().forEach(slot -> {
 				Bukkit.getScheduler().runTask(getInstance(), () -> {
 					final ItemMeta meta = item.getItemMeta();
-					meta.setDisplayName(ColorUtils.C(player, value.displayName()));
-					meta.setLore(
-							value.lore().stream().map(each -> ColorUtils.C(player, each)).collect(Collectors.toList()));
+					meta.setDisplayName(ColorUtils.B(value.displayName()));
+					meta.setLore(value.lore().stream().map(each -> ColorUtils.B(each)).collect(Collectors.toList()));
 					item.setItemMeta(meta);
 					inv.setItem(slot, item);
 				});
@@ -263,233 +258,225 @@ public final class ChatPlugin extends JavaPlugin {
 		});
 	}
 
-	/**
-	 * {pageNumber, items(the slot, and player name actually)} actually I can remove
-	 * this <> but my IDE throws a warning
-	 */
-	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_INVITEINVS = new ConcurrentHashMap<>();
-	public static final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> STORED_REQUESTINVS = new ConcurrentHashMap<>();
-
-	private static void onPlayerRepeat(UUID senderUUID, int checkingArea, int emptySlotsSize, Stack<UUID> cloneStack,
-			List<Integer> emptySlots, AtomicInteger pageNumber,
-			ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Inventory>> collection, Gui gui,
-			CompletableFuture<Inventory> callback) {
-		final ConcurrentHashMap<Integer, Inventory> pages = new ConcurrentHashMap<>();
-		final AtomicReference<Inventory> firstInventory = new AtomicReference<>();
-		final Player player = Bukkit.getPlayer(senderUUID);
-		if (checkingArea < emptySlotsSize) {
-			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(),
-					ColorUtils.C(player, gui.getTitle()));
-			normalFiller(Bukkit.getPlayer(senderUUID), gui.getEntries(), inventory);
-			outer: for (UUID playerUUID : cloneStack.reversed())
-				for (int emptySlot : emptySlots) {
-					final Player pUUID = Bukkit.getPlayer(playerUUID);
-					final ItemSaver playerHead = getSkullOfOwner(pUUID);
-					final ItemStack item = playerHead.item();
-					final ItemMeta meta = item.getItemMeta();
-					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each))
-							.collect(Collectors.toUnmodifiableList());
-					Bukkit.getScheduler().runTask(getInstance(), () -> {
-						meta.setLore(gLore);
-						meta.setDisplayName(ColorUtils.C(player, "&7" + pUUID.getDisplayName()));
-						item.setItemMeta(meta);
-						inventory.setItem(emptySlot, item);
-					});
-					continue outer;
-				}
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				pages.put(pageNumber.get(), inventory);
-				collection.put(senderUUID, pages);
-				if (pageNumber.get() == 0) {
-					firstInventory.lazySet(inventory);
-					callback.complete(firstInventory.get());
-				}
-			});
-
-		} else { // checkingArea >= emptySlotsSize
-			final Inventory inventory = Bukkit.createInventory(null, gui.getSize(),
-					ColorUtils.C(player, gui.getTitle()));
-			normalFiller(player, gui.getEntries(), inventory);
-			outer: for (UUID playerUUID : cloneStack)
-				for (int emptySlot : emptySlots) {
-					final Player pUUID = Bukkit.getPlayer(playerUUID);
-					final ItemSaver playerHead = getSkullOfOwner(pUUID);
-					final ItemStack item = playerHead.item();
-					final ItemMeta meta = item.getItemMeta();
-					final List<String> gLore = gui.getLore().stream().map(each -> ColorUtils.C(player, each))
-							.collect(Collectors.toUnmodifiableList());
-					Bukkit.getScheduler().runTask(getInstance(), () -> {
-						meta.setLore(gLore);
-						meta.setDisplayName(ColorUtils.C(player, "&7" + pUUID.getDisplayName()));
-						item.setItemMeta(meta);
-						inventory.setItem(emptySlot, item);
-					});
-					continue outer;
-				}
-			for (int remove = 1; remove < emptySlotsSize; remove++)
-				cloneStack.pop();
-			checkingArea = cloneStack.size() - emptySlotsSize;
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				pages.put(pageNumber.getAndIncrement(), inventory);
-				if (pageNumber.get() == 0)
-					firstInventory.lazySet(inventory);
-			});
-			onPlayerRepeat(senderUUID, checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber, collection,
-					gui, callback);
-		}
-	}
-
-	public static void onPlayerRequest(Player player, CompletableFuture<Inventory> callback, boolean open) {
-		Optional<ConcurrentHashMap<Integer, Inventory>> map = Optional
-				.ofNullable(STORED_REQUESTINVS.get(player.getUniqueId()));
-		if (map.isPresent()) {
-			if (open)
-				CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
-						.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
-			return;
-		}
-		List<Integer> emptySlots = iInvite.getEmpties();
-		int emptySlotsSize = emptySlots.size();
-		AtomicInteger pageNumber = new AtomicInteger(0);
-		Stack<UUID> cloneStack = new Stack<>();
-		Bukkit.getOnlinePlayers().stream().forEach(each -> cloneStack.push(each.getUniqueId()));
-		int playersGroupsSize = cloneStack.size();
-		int checkingArea = playersGroupsSize - emptySlotsSize;
-		CompletableFuture.runAsync(() -> {
-			onPlayerRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber,
-					STORED_REQUESTINVS, iRequest, callback);
-		}, EVIRTUAL);
-	}
-
-	public static void onPlayerDelete(Player player, CompletableFuture<Inventory> callback) {
-		final Optional<Inventory> playerInv = Optional.ofNullable(STORED_DELETEINVS.get(player.getUniqueId()));
-		if (playerInv.isPresent()) {
-			CompletableFuture.supplyAsync(() -> playerInv.get()).thenAccept(firstInventory -> Bukkit.getScheduler()
-					.runTask(getInstance(), () -> player.openInventory(firstInventory)));
-			return;
-		}
-		final Inventory inventory = Bukkit.createInventory(null, iDelete.getSize(),
-				ColorUtils.C(player, iDelete.getTitle()));
-		CompletableFuture.runAsync(() -> {
-			normalFiller(player, iDelete.getEntries(), inventory);
-			STORED_DELETEINVS.put(player.getUniqueId(), inventory);
-			Bukkit.getScheduler().runTask(getInstance(), () -> {
-				callback.complete(inventory);
-				callback.thenAccept(firstInventory -> Bukkit.getScheduler().runTask(getInstance(),
-						() -> player.openInventory(firstInventory)));
-			});
-		}, EVIRTUAL);
-
-	}
-
-	public static void onPlayerInvite(Player player, CompletableFuture<Inventory> callback, boolean check) {
-		Optional<ConcurrentHashMap<Integer, Inventory>> map = Optional
-				.ofNullable(STORED_INVITEINVS.get(player.getUniqueId()));
-		if (map.isPresent()) {
-			if (check)
-				CompletableFuture.supplyAsync(() -> map.get()).thenAccept(inventory -> Bukkit.getScheduler()
-						.runTask(getInstance(), () -> player.openInventory(inventory.get(0))));
-			return;
-		}
-		List<Integer> emptySlots = iInvite.getEmpties();
-		int emptySlotsSize = emptySlots.size();
-		AtomicInteger pageNumber = new AtomicInteger(0);
-		Stack<UUID> cloneStack = new Stack<>();
-		Bukkit.getOnlinePlayers().stream().forEach(each -> cloneStack.push(each.getUniqueId()));
-		int playersGroupsSize = cloneStack.size();
-		int checkingArea = playersGroupsSize - emptySlotsSize;
-		onPlayerRepeat(player.getUniqueId(), checkingArea, emptySlotsSize, cloneStack, emptySlots, pageNumber,
-				STORED_INVITEINVS, iInvite, callback);
+	public static Inventory onPlayerDelete() {
+		if (CALL_ONCEDELETE.get())
+			return storedDelete;
+		normalFiller(iMenu.getEntries(), storedDelete);
+		CALL_ONCEDELETE.lazySet(true);
+		return storedDelete;
 	}
 
 	public static final ConcurrentHashMap<String, ConcurrentLinkedDeque<Inventory>> STORED_MUTEINVS = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<Integer, Inventory> STORED_INVITEINVS = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<Integer, Inventory> STORED_REQUESTINVS = new ConcurrentHashMap<>();
 
-	private static void onPlayerMuteRepeat(String groupName, List<UUID> cloneList, List<Integer> empties,
-			AtomicInteger checkingArea, int emptySlots, AtomicReference<Optional<ConcurrentLinkedDeque<Inventory>>> opt,
-			CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> callback) {
-		final ConcurrentLinkedDeque<Inventory> inventories = new ConcurrentLinkedDeque<Inventory>();
-		final Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
-		if (checkingArea.get() < emptySlots) {
+	private static void repeatIteration(List<Integer> empties, List<UUID> cloneList, Inventory inventory) {
+		normalFiller(iMute.getEntries(), inventory);
+		CompletableFuture.runAsync(() -> {
 			Iterator<Integer> iterator = empties.iterator();
 			for (UUID eachUUID : cloneList)
 				if (iterator.hasNext())
 					Bukkit.getScheduler().runTask(plugin, () -> {
 						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
+						if (!skullPlayer.isOnline())
+							return;
 						final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
 						final ItemStack item = itemSave.item();
 						final ItemMeta meta = item.getItemMeta();
-						if (skullPlayer.isOnline()) {
-							normalFiller(skullPlayer, iMute.getEntries(), inventory);
-							meta.setLore(iMute.getLore().stream().map(each -> ColorUtils.C(skullPlayer, each))
-									.collect(Collectors.toUnmodifiableList()));
-							meta.setDisplayName(ColorUtils.C(skullPlayer, "&7" + skullPlayer.getName()));
-						}
+						meta.setLore(iMute.getLore().stream().map(each -> ColorUtils.B(each))
+								.collect(Collectors.toUnmodifiableList()));
+						meta.setDisplayName(ColorUtils.B("&7" + skullPlayer.getName()));
 						item.setItemMeta(meta);
 						final int slot = iterator.next();
 						inventory.setItem(slot, item);
 						iMute.getEntries().put(skullPlayer.getName(), new Entry(null, item, null, 0, null, null));
 					});
+		}, EVIRTUAL);
+	}
+
+	private static void onPlayerRepeat(String groupName, List<UUID> cloneList, List<Integer> empties,
+			AtomicInteger checkingArea, int emptySlots, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback) {
+		final ConcurrentLinkedDeque<Inventory> inventories = new ConcurrentLinkedDeque<Inventory>();
+		Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
+		if (checkingArea.get() < emptySlots) {
+			repeatIteration(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				inventories.addLast(inventory);
 				STORED_MUTEINVS.put(groupName, inventories);
-				if (STORED_MUTEINVS.get(groupName) == null)
-					System.out.println("its null");
-				opt.lazySet(Optional.ofNullable(STORED_MUTEINVS.get(groupName)));
-				callback.complete(opt.get());
-				System.out.println("mother fucker inventory is in fucking kos");
+				callback.complete(STORED_MUTEINVS.get(groupName));
 			});
 		} else {
-			Iterator<Integer> iterator = empties.iterator();
-			for (UUID eachUUID : cloneList)
-				if (iterator.hasNext())
-					Bukkit.getScheduler().runTask(plugin, () -> {
-						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
-						final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
-						final ItemStack item = itemSave.item();
-						final ItemMeta meta = item.getItemMeta();
-						if (skullPlayer.isOnline()) {
-							normalFiller(skullPlayer, iMute.getEntries(), inventory);
-							meta.setLore(iMute.getLore().stream().map(each -> ColorUtils.C(skullPlayer, each))
-									.collect(Collectors.toUnmodifiableList()));
-							meta.setDisplayName(ColorUtils.C(skullPlayer, "&7" + skullPlayer.getName()));
-						}
-						item.setItemMeta(meta);
-						final int slot = iterator.next();
-						inventory.setItem(slot, item);
-						iMute.getEntries().put(skullPlayer.getName(), new Entry(null, item, null, 0, null, null));
-					});
+			repeatIteration(empties, cloneList, inventory);
 			for (int remove = 1; remove < emptySlots; remove++)
 				cloneList.removeLast();
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				checkingArea.lazySet(checkingArea.get() - emptySlots);
 				inventories.offer(inventory);
 			});
-			onPlayerMuteRepeat(groupName, cloneList, empties, checkingArea, emptySlots, opt, callback);
+			onPlayerRepeat(groupName, cloneList, empties, checkingArea, emptySlots, callback);
 		}
 	}
 
-	public static CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> onPlayerMute(String groupName,
-			boolean update, CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>> callback) {
-		AtomicReference<Optional<ConcurrentLinkedDeque<Inventory>>> opt = new AtomicReference<>(
-				Optional.ofNullable(STORED_MUTEINVS.get(groupName)));
-		System.out.println("onPlayerMute optional");
-		if (!update)
-			callback.complete(opt.get());
-		else {
-			MDatabase.getPlayersByGroup(groupName).thenAccept(players -> {
-				final List<UUID> cloneList = players;
-				final int playersSize = cloneList.size();
-				final List<Integer> empties = Collections.unmodifiableList(iMute.getEmpties());
-				final int emptySlots = empties.size();
-				AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
-				onPlayerMuteRepeat(groupName, cloneList, empties, checkingArea, emptySlots, opt, callback);
+	public static void onPlayerMute(Player player, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback,
+			boolean update) {
+		MDatabase.getPlayerGroup(player.getUniqueId()).thenAccept(group -> {
+			Bukkit.getScheduler().runTask(getInstance(), () -> {
+				final Optional<ConcurrentLinkedDeque<Inventory>> opt = Optional.ofNullable(STORED_MUTEINVS.get(group));
+				if (opt.isPresent() && !update)
+					callback.complete(opt.get());
+				else if (update) {
+					MDatabase.getPlayersByGroup(group).thenAccept(players -> {
+						final List<UUID> cloneList = players;
+						final int playersSize = cloneList.size();
+						final List<Integer> empties = !group.equals("none")
+								? Collections.unmodifiableList(iMute.getEmpties())
+								: Collections.unmodifiableList(Arrays.asList());
+						final int emptySlots = empties.size();
+						AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
+						onPlayerRepeat(group, cloneList, empties, checkingArea, emptySlots, callback);
+					});
+				}
 			});
-		}
-		return callback;
+		});
 	}
 
-	public static void updateGui(String groupName) {
-		onPlayerMute(groupName, true, new CompletableFuture<Optional<ConcurrentLinkedDeque<Inventory>>>());
+	private static void repeatIterationRequest(List<Integer> empties, List<String> cloneList, Inventory inventory) {
+		normalFiller(iRequest.getEntries(), inventory);
+		CompletableFuture.runAsync(() -> {
+			Iterator<Integer> iterator = empties.iterator();
+			for (String eachGroup : cloneList)
+				if (iterator.hasNext()) {
+					Bukkit.getScheduler().runTask(plugin, () -> {
+						MDatabase.getGroupAdmin(eachGroup).thenAccept(adminUUID -> {
+							Bukkit.getScheduler().runTask(getInstance(), () -> {
+								final Player skullPlayer = Bukkit.getPlayer(adminUUID);
+								if (!skullPlayer.isOnline())
+									return;
+								final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
+								final ItemStack item = itemSave.item();
+								final ItemMeta meta = item.getItemMeta();
+								meta.setLore(iRequest.getLore().stream().map(each -> ColorUtils.B(each))
+										.collect(Collectors.toUnmodifiableList()));
+								meta.setDisplayName(ColorUtils.B("&7" + skullPlayer.getName()));
+								item.setItemMeta(meta);
+								final int slot = iterator.next();
+								inventory.setItem(slot, item);
+								iRequest.getEntries().put(skullPlayer.getName(),
+										new Entry(null, item, null, 0, null, null));
+							});
+						});
+					});
+				}
+		}, EVIRTUAL);
+	}
+
+	private static void onPlayerRepeatRequest(AtomicInteger pageNumber, List<String> cloneList, List<Integer> empties,
+			AtomicInteger checkingArea, int emptySlots, CompletableFuture<Inventory> callback) {
+		Inventory inventory = Bukkit.createInventory(null, iRequest.getSize(), iRequest.getTitle());
+		if (checkingArea.get() < emptySlots) {
+			repeatIterationRequest(empties, cloneList, inventory);
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				STORED_REQUESTINVS.put(pageNumber.get(), inventory);
+				callback.complete(STORED_REQUESTINVS.get(0));
+			});
+		} else {
+			repeatIterationRequest(empties, cloneList, inventory);
+			for (int remove = 1; remove < emptySlots; remove++)
+				cloneList.removeLast();
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				checkingArea.lazySet(checkingArea.get() - emptySlots);
+				STORED_REQUESTINVS.put(pageNumber.getAndIncrement(), inventory);
+			});
+			onPlayerRepeatRequest(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
+		}
+	}
+
+	public static void onPlayerRequest(CompletableFuture<Inventory> callback, boolean update) {
+		MDatabase.getGroupList().thenAccept(groupList -> {
+			Bukkit.getScheduler().runTask(getInstance(), () -> {
+				if (!STORED_REQUESTINVS.isEmpty() && !update)
+					callback.complete(STORED_REQUESTINVS.get(0));
+				else if (update) {
+					final List<String> cloneList = groupList;
+					final int playersSize = cloneList.size();
+					final List<Integer> empties = Collections.unmodifiableList(iRequest.getEmpties());
+					final int emptySlots = empties.size();
+					AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
+					AtomicInteger pageNumber = new AtomicInteger(0);
+					onPlayerRepeatRequest(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
+				}
+			});
+		});
+	}
+
+	private static void repeatIterationInvite(List<Integer> empties, List<Player> cloneList, Inventory inventory) {
+		normalFiller(iInvite.getEntries(), inventory);
+		CompletableFuture.runAsync(() -> {
+			Iterator<Integer> iterator = empties.iterator();
+			for (final Player eachPlayer : cloneList)
+				if (iterator.hasNext())
+					Bukkit.getScheduler().runTask(plugin, () -> {
+						if (!eachPlayer.isOnline())
+							return;
+						final ItemSaver itemSave = getSkullOfOwner(eachPlayer);
+						final ItemStack item = itemSave.item();
+						final ItemMeta meta = item.getItemMeta();
+						meta.setLore(iInvite.getLore().stream().map(each -> ColorUtils.B(each))
+								.collect(Collectors.toUnmodifiableList()));
+						meta.setDisplayName(ColorUtils.B("&7" + eachPlayer.getName()));
+						item.setItemMeta(meta);
+						final int slot = iterator.next();
+						inventory.setItem(slot, item);
+						iInvite.getEntries().put(eachPlayer.getName(), new Entry(null, item, null, 0, null, null));
+					});
+		}, EVIRTUAL);
+	}
+
+	private static void onPlayerRepeatInvite(AtomicInteger pageNumber, List<Player> cloneList, List<Integer> empties,
+			AtomicInteger checkingArea, int emptySlots, CompletableFuture<Inventory> callback) {
+		Inventory inventory = Bukkit.createInventory(null, iInvite.getSize(), iInvite.getTitle());
+		if (checkingArea.get() < emptySlots) {
+			repeatIterationInvite(empties, cloneList, inventory);
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				STORED_INVITEINVS.put(pageNumber.incrementAndGet(), inventory);
+				callback.complete(STORED_INVITEINVS.get(0));
+			});
+		} else {
+			repeatIterationInvite(empties, cloneList, inventory);
+			for (int remove = 1; remove < emptySlots; remove++)
+				cloneList.removeLast();
+			Bukkit.getScheduler().runTask(plugin, () -> {
+				checkingArea.lazySet(checkingArea.get() - emptySlots);
+				STORED_INVITEINVS.put(pageNumber.getAndIncrement(), inventory);
+			});
+			onPlayerRepeatInvite(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
+		}
+	}
+
+	public static void onPlayerInvite(CompletableFuture<Inventory> callback, boolean update) {
+		if (!STORED_INVITEINVS.isEmpty() && !update)
+			callback.complete(STORED_INVITEINVS.get(0));
+		else if (update) {
+			final List<Player> cloneList = ImmutableList.copyOf(Bukkit.getOnlinePlayers());
+			final int playersSize = cloneList.size();
+			final List<Integer> empties = Collections.unmodifiableList(iRequest.getEmpties());
+			final int emptySlots = empties.size();
+			AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
+			AtomicInteger pageNumber = new AtomicInteger(0);
+			onPlayerRepeatInvite(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
+		}
+	}
+
+	public static void updateMute(Player player) {
+		onPlayerMute(player, new CompletableFuture<ConcurrentLinkedDeque<Inventory>>(), true);
+	}
+
+	public static void updateInvite() {
+		onPlayerInvite(new CompletableFuture<Inventory>(), true);
+	}
+
+	public static void updateRequest() {
+		onPlayerRequest(new CompletableFuture<Inventory>(), true);
 	}
 
 	private void createConfig() {
