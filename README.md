@@ -23,6 +23,7 @@ mvn clean package
 
 ### Requirements
 - ###### Java 21 or higher (because of virtual threads)
+- ###### PlaceholderAPI plugin
 
 ## Images
 

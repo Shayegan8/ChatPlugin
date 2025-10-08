@@ -27,7 +27,7 @@ public class Placeholders extends PlaceholderExpansion {
 	public Placeholders(Plugin plugin) {
 		this.plugin = plugin;
 		final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-		scheduler.scheduleAtFixedRate(this::cleaner, 60, 60, TimeUnit.SECONDS);
+		scheduler.scheduleAtFixedRate(this::cleaner, 60, 60, TimeUnit.SECONDS); 
 	}
 
 	private void cleaner() {
