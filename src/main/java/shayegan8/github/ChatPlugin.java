@@ -244,7 +244,6 @@ public final class ChatPlugin extends JavaPlugin {
 		entries.entrySet().stream().forEach((entry) -> {
 			final Entry value = entry.getValue();
 			final ItemStack item = value.item();
-			System.out.println(entry.getKey());
 			value.slots().forEach(slot -> {
 				Bukkit.getScheduler().runTask(getInstance(), () -> {
 					final ItemMeta meta = item.getItemMeta();
@@ -298,20 +297,15 @@ public final class ChatPlugin extends JavaPlugin {
 			AtomicInteger checkingArea, int emptySlots, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback) {
 		final ConcurrentLinkedDeque<Inventory> inventories = new ConcurrentLinkedDeque<Inventory>();
 		Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
-		System.out.println("variable onPlayerRepeat");
 		if (checkingArea.get() < emptySlots) {
-			System.out.println("first condition");
 			repeatIteration(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				inventories.offer(inventory);
 				STATES.put(inventory, IState.IMPORTANT);
-				System.out.println("main thread onPlayerRepeat");
 				STORED_MUTEINVS.put(groupName, inventories);
 				callback.complete(STORED_MUTEINVS.get(groupName));
-				System.out.println("fucked");
 			});
 		} else {
-			System.out.println("second condition");
 			repeatIteration(empties, cloneList, inventory);
 			for (int remove = 1; remove < emptySlots; remove++)
 				cloneList.removeLast();
@@ -327,22 +321,16 @@ public final class ChatPlugin extends JavaPlugin {
 	public static void onPlayerMute(Player player, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback,
 			boolean update) {
 		MDatabase.getPlayerGroup(player.getUniqueId()).thenAccept(group -> {
-			System.out.println("player group thread");
-			System.out.println("main thread");
 			final Optional<ConcurrentLinkedDeque<Inventory>> opt = Optional.ofNullable(STORED_MUTEINVS.get(group));
 			if (opt.isPresent() && !update) {
-				System.out.println("running this part");
 				callback.complete(opt.get());
 			} else {
-				System.out.println("no this part");
 				MDatabase.getPlayersByGroup(group).thenAccept(players -> {
-					System.out.println("get players by group thread");
 					final List<UUID> cloneList = players;
 					final int playersSize = cloneList.size();
 					final List<Integer> empties = Collections.unmodifiableList(iMute.getEmpties());
 					final int emptySlots = empties.size();
 					AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
-					System.out.println("variables");
 					onPlayerRepeat(group, cloneList, empties, checkingArea, emptySlots, callback);
 				});
 			}

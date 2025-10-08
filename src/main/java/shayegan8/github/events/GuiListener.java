@@ -7,10 +7,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -21,8 +19,8 @@ public class GuiListener implements Listener {
 
 	@EventHandler
 	public void onMove(InventoryClickEvent e) {
-		Player player = (Player) e.getWhoClicked();
-		Inventory currentInventory = player.getOpenInventory().getTopInventory();
+		final Player player = (Player) e.getWhoClicked();
+		final Inventory currentInventory = player.getOpenInventory().getTopInventory();
 		if (currentInventory == null)
 			return;
 		if (ChatPlugin.STATES.containsKey(currentInventory))
@@ -31,18 +29,16 @@ public class GuiListener implements Listener {
 
 	@EventHandler
 	public void openMenu(InventoryClickEvent e) {
-		Player player = (Player) e.getWhoClicked();
-		Inventory currentInventory = player.getOpenInventory().getTopInventory();
-		ItemStack currentItem = e.getCurrentItem();
+		final Player player = (Player) e.getWhoClicked();
+		final Inventory currentInventory = player.getOpenInventory().getTopInventory();
+		final ItemStack currentItem = e.getCurrentItem();
 		MDatabase.getPlayerGroup(player.getUniqueId()).thenAccept(group -> {
 			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
 				if (currentInventory == null)
 					return;
 				if (ChatPlugin.storedMenu.equals(currentInventory)) {
-					System.out.println("TELL IT BITCH " + e.isCancelled());
 					ChatPlugin.iMenu.getEntries().entrySet().stream()
 							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
-								System.out.println(entry.getKey());
 								switch (entry.getKey()) {
 								case "gui.menu.list.c":
 									player.closeInventory();
@@ -91,7 +87,6 @@ public class GuiListener implements Listener {
 									Iterator<Inventory> decIterator = ChatPlugin.STORED_MUTEINVS.get(group).iterator();
 									iterationInfunc(decIterator, currentInventory, player);
 								} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
-									System.out.println(entry.getKey());
 									player.performCommand("chatp mute " + entry.getKey());
 									player.closeInventory();
 								}
@@ -112,7 +107,6 @@ public class GuiListener implements Listener {
 													player.openInventory(
 															ChatPlugin.STORED_INVITEINVS.get(currentIndex - 1));
 											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
-												System.out.println(entry.getKey());
 												player.performCommand("chatp invite " + entry.getKey());
 												player.closeInventory();
 											}
@@ -134,7 +128,6 @@ public class GuiListener implements Listener {
 													player.openInventory(
 															ChatPlugin.STORED_REQUESTINVS.get(currentIndex - 1));
 											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
-												System.out.println(entry.getKey());
 												player.performCommand("chatp request " + entry.getKey());
 												player.closeInventory();
 											}
