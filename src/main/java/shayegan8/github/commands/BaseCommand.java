@@ -60,19 +60,17 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
 		String firstArgument = args[0];
 		return switch (firstArgument) {
 		case "group" -> switch (args.length) { // chatp group create name
-		case 1 ->
-			Stream.of("create", "delete", "help").filter((x) -> x.startsWith(args[0])).collect(Collectors.toList());
+		case 2 ->
+			Stream.of("create", "delete", "help").filter((x) -> x.startsWith(args[1])).collect(Collectors.toList());
+		default -> List.of();
+		};
+		case "invite", "request", "accept" -> switch (args.length) {
 		case 2 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[1]))
 				.collect(Collectors.toList());
 		default -> List.of();
 		};
-		case "join", "invite", "request", "accept" -> switch (args.length) {
-		case 1 -> Bukkit.getOnlinePlayers().stream().map(Player::getName).filter((each) -> each.startsWith(args[0]))
-				.collect(Collectors.toList());
-		default -> List.of();
-		};
-		default -> Stream.of("remove", "reload", "quit", "mute", "join", "invite", "help", "group", "friends", "menu", "request", "accept")
-				.filter((x) -> x.startsWith(firstArgument)).collect(Collectors.toList());
+		default -> Stream.of("remove", "reload", "quit", "mute", "join", "invite", "help", "group", "friends", "menu",
+				"request", "accept").filter((x) -> x.startsWith(firstArgument)).collect(Collectors.toList());
 		};
 	}
 }

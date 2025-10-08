@@ -24,7 +24,7 @@ public class Request extends CommandManager {
 
 	@Override
 	public String getUsage() {
-		return "&e/chatp remove &cplayerName";
+		return "&e/chatp request &cplayerName";
 	}
 
 	@SuppressWarnings("deprecation")
@@ -49,8 +49,8 @@ public class Request extends CommandManager {
 		}
 
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
-		MDatabase.playerHasGroup(argUUID).thenAccept(hasGroup -> {
-			if (!hasGroup) {
+		MDatabase.isPlayerInGroup(argUUID).thenAccept(inGroup -> {
+			if (!inGroup) {
 				ChatPlugin.sendCMSG(player, "chatp.request.dontGroup", "&cThat player dosent have group");
 				return;
 			}

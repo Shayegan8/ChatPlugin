@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.database.MDatabase;
+import shayegan8.github.expansions.Placeholders;
 
 public class Accept extends CommandManager {
 
@@ -51,6 +52,8 @@ public class Accept extends CommandManager {
 							MDatabase.setPlayerGroup(argUUID, senderGroup);
 							MDatabase.setPlayerInGroup(argUUID, true);
 							MDatabase.setPlayerRequest(argUUID, "none");
+							Placeholders.updateGroup(argUUID);
+							Placeholders.updateTag(argUUID);
 							ChatPlugin.sendACMSG(argPlayer, "chatp.accept.fucked",
 									"&eYou are now in %chatp_group% group");
 							ChatPlugin.updateMute(player);
