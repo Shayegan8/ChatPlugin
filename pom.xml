@@ -6,7 +6,7 @@
 
 	<groupId>shayegan8.github</groupId>
 	<artifactId>ChatPlugin</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<packaging>jar</packaging>
 
 	<name>ChatPlugin</name>

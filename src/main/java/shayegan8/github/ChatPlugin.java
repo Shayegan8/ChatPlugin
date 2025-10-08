@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-@Plugin(name = "ChatPlugin", version = "1.0.0")
+@Plugin(name = "ChatPlugin", version = "1.0.1")
 @Description("Simple chat plugin :O")
 @Author("Shayegan8")
 @Permission(name = "chatp.base.help", desc = "chatplugin help command")
