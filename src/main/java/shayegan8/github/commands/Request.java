@@ -42,12 +42,19 @@ public class Request extends CommandManager {
 			ChatPlugin.sendACMSG(player, "chatp.request.notFound", "&cCant find this player :(");
 			return;
 		}
+		
+		if(args[0].equals(sender.getName())) {
+			ChatPlugin.sendACMSG(player, "chatp.request.cantFuckYourself", "&cYou can't send request to yourself");
+			return;
+		}
+			
 
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 		if (!Bukkit.getPlayer(argUUID).isOnline()) {
 			ChatPlugin.sendACMSG(player, "chatp.request.notOnline", "&cPlayer it's not online");
 			return;
 		}
+		
 		MDatabase.playerHasGroup(argUUID).thenAccept(hasGroup -> {
 			if (!hasGroup) {
 				ChatPlugin.sendCMSG(player, "chatp.request.dontGroup", "&cThat player dosent have group");
