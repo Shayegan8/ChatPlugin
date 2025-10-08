@@ -24,10 +24,6 @@ mvn clean package
 ### Requirements
 - ###### Java 21 or higher (because of virtual threads)
 
-### Java concepts
-- Concurrency
-- Enumeration
-
 ## Images
 
 ## License

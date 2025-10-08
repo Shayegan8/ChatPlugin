@@ -62,15 +62,17 @@ public class Group extends CommandManager {
 						ChatPlugin.sendCMSG(player, "chatp.group.cantCreate", "&cYou are already in a group");
 						return;
 					}
-					MDatabase.createGroup(args[1]);
-					MDatabase.setPlayerInGroup(uuid, true);
-					Placeholders.updateGroup(uuid);
-					MDatabase.setPlayerTag(uuid, "admin");
-					Placeholders.updateTag(uuid);
-					MDatabase.setPlayerGroup(uuid, args[1]);
-					ChatPlugin.updateMute(player);
-					ChatPlugin.updateRequest();
-					ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");
+					Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+						MDatabase.createGroup(args[1]);
+						MDatabase.setPlayerInGroup(uuid, true);
+						Placeholders.updateGroup(uuid);
+						MDatabase.setPlayerTag(uuid, "admin");
+						Placeholders.updateTag(uuid);
+						MDatabase.setPlayerGroup(uuid, args[1]);
+						ChatPlugin.updateMute(player);
+						ChatPlugin.updateRequest();
+						ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");						
+					});
 				}).exceptionally(exp -> {
 					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 				});
@@ -98,16 +100,18 @@ public class Group extends CommandManager {
 								final Player eachPlayer = Bukkit.getPlayer(eachUUID);
 								if (!eachPlayer.isOnline())
 									return;
-								MDatabase.deleteGroup(args[1]);
-								MDatabase.setPlayerGroup(eachUUID, "none");
-								Placeholders.updateGroup(eachUUID);
-								MDatabase.setPlayerInGroup(eachUUID, false);
-								MDatabase.setPlayerTag(eachUUID, "none");
-								Placeholders.updateTag(eachUUID);
-								ChatPlugin.sendCMSG(Bukkit.getPlayer(uuid), "chatp.group.deleted",
-										"&cYour group has been deleted");
-								ChatPlugin.STORED_MUTEINVS.remove(args[1]);
-								ChatPlugin.updateRequest();
+								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+									MDatabase.deleteGroup(args[1]);
+									MDatabase.setPlayerGroup(eachUUID, "none");
+									Placeholders.updateGroup(eachUUID);
+									MDatabase.setPlayerInGroup(eachUUID, false);
+									MDatabase.setPlayerTag(eachUUID, "none");
+									Placeholders.updateTag(eachUUID);
+									ChatPlugin.sendCMSG(Bukkit.getPlayer(uuid), "chatp.group.deleted",
+											"&cYour group has been deleted");
+									ChatPlugin.STORED_MUTEINVS.remove(args[1]);
+									ChatPlugin.updateRequest();									
+								});
 							});
 						});
 					}).exceptionally(exp -> {
