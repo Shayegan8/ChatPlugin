@@ -102,10 +102,18 @@ public class GuiListener implements Listener {
 												if (ChatPlugin.STORED_INVITEINVS.containsKey(currentIndex + 1))
 													player.openInventory(
 															ChatPlugin.STORED_INVITEINVS.get(currentIndex + 1));
+												else {
+													ChatPlugin.sendACMSG(player, "chatp.invite.noMorePage", "&cThere is no more page");
+													player.closeInventory();
+												}
 											} else if (key.equals("gui.invite.list.previous")) {
 												if (ChatPlugin.STORED_INVITEINVS.containsKey(currentIndex - 1))
 													player.openInventory(
 															ChatPlugin.STORED_INVITEINVS.get(currentIndex - 1));
+												else {
+													ChatPlugin.sendACMSG(player, "chatp.invite.noMorePage", "&cThere is no more page");
+													player.closeInventory();
+												}
 											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
 												player.performCommand("chatp invite " + entry.getKey());
 												player.closeInventory();
@@ -123,10 +131,18 @@ public class GuiListener implements Listener {
 												if (ChatPlugin.STORED_REQUESTINVS.containsKey(currentIndex + 1))
 													player.openInventory(
 															ChatPlugin.STORED_REQUESTINVS.get(currentIndex + 1));
+												else {
+													ChatPlugin.sendACMSG(player, "chatp.request.noMorePage", "&cThere is no more page");
+													player.closeInventory();
+												}
 											} else if (key.equals("gui.request.list.previous")) {
 												if (ChatPlugin.STORED_REQUESTINVS.containsKey(currentIndex - 1))
 													player.openInventory(
 															ChatPlugin.STORED_REQUESTINVS.get(currentIndex - 1));
+												else {
+													ChatPlugin.sendACMSG(player, "chatp.request.noMorePage", "&cThere is no more page");
+													player.closeInventory();
+												}
 											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
 												player.performCommand("chatp request " + entry.getKey());
 												player.closeInventory();
