@@ -1,12 +1,13 @@
 package shayegan8.github.events;
 
+import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -14,62 +15,164 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.database.MDatabase;
 
 public class GuiListener implements Listener {
 
-	private final static AtomicBoolean CONTAIN = new AtomicBoolean(false);
-
 	@EventHandler
-	public void openMenu(InventoryClickEvent e) {
-		final Player player = (Player) e.getWhoClicked();
-		final Inventory currentInventory = e.getClickedInventory();
-		final ItemStack currentItem = e.getCurrentItem();
-		CONTAIN.lazySet(false);
-		ChatPlugin.STORED_MUTEINVS.values().forEach(eachValue -> {
-			if (eachValue.contains(currentInventory))
-				CONTAIN.lazySet(true);
-		});
-		if (!(ChatPlugin.storedMenu.equals(currentInventory) || ChatPlugin.storedDelete.equals(currentInventory)
-				|| ChatPlugin.STORED_REQUESTINVS.containsValue(currentInventory)
-				|| ChatPlugin.STORED_INVITEINVS.containsValue(currentInventory)) || CONTAIN.get()) {
+	public void onMove(InventoryClickEvent e) {
+		Player player = (Player) e.getWhoClicked();
+		Inventory currentInventory = player.getOpenInventory().getTopInventory();
+		if (currentInventory == null)
 			return;
-		}
-		e.setCancelled(true);
-		CompletableFuture<ConcurrentLinkedDeque<Inventory>> completeAss = new CompletableFuture<>();
-		if (ChatPlugin.storedMenu.equals(currentInventory)) {
-			ChatPlugin.iMenu.getEntries().entrySet().stream()
-					.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
-						System.out.println(entry.getKey());
-						switch (entry.getKey()) {
-						case "gui.menu.list.c":
-							player.closeInventory();
-							break;
-						case "gui.menu.list.b":
-							player.performCommand("chatp help");
-							player.closeInventory();
-							break;
-						case "gui.menu.list.a":
-							ChatPlugin.onPlayerMute(player, completeAss, false);
-							completeAss.thenAccept(action -> {
-								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-										() -> player.openInventory(action.getFirst()));
-							});
-						}
-					});
-		} else if(CONTAIN.get()) {
-			System.out.println("yes");
-		}
+		if (ChatPlugin.STATES.containsKey(currentInventory))
+			e.setCancelled(true);
 	}
 
 	@EventHandler
-	public void openKir(InventoryDragEvent e) {
-		final Inventory currentInventory = e.getWhoClicked().getOpenInventory().getTopInventory();
-		if (!(ChatPlugin.storedMenu.equals(currentInventory) || ChatPlugin.storedDelete.equals(currentInventory)
-				|| ChatPlugin.STORED_REQUESTINVS.containsValue(currentInventory)
-				|| ChatPlugin.STORED_INVITEINVS.containsValue(currentInventory)) || CONTAIN.get()) {
-			return;
+	public void openMenu(InventoryClickEvent e) {
+		Player player = (Player) e.getWhoClicked();
+		Inventory currentInventory = player.getOpenInventory().getTopInventory();
+		ItemStack currentItem = e.getCurrentItem();
+		MDatabase.getPlayerGroup(player.getUniqueId()).thenAccept(group -> {
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+				if (currentInventory == null)
+					return;
+				if (ChatPlugin.storedMenu.equals(currentInventory)) {
+					System.out.println("TELL IT BITCH " + e.isCancelled());
+					ChatPlugin.iMenu.getEntries().entrySet().stream()
+							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+								System.out.println(entry.getKey());
+								switch (entry.getKey()) {
+								case "gui.menu.list.c":
+									player.closeInventory();
+									break;
+								case "gui.menu.list.b":
+									player.performCommand("chatp help");
+									player.closeInventory();
+									break;
+								case "gui.menu.list.a":
+									CompletableFuture<ConcurrentLinkedDeque<Inventory>> completeAss = new CompletableFuture<>();
+									ChatPlugin.onPlayerMute(player, completeAss, false);
+									completeAss.thenAccept(inventory -> {
+										Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+												() -> player.openInventory(inventory.getLast()));
+									});
+									break;
+								case "gui.menu.list.d":
+									CompletableFuture<Inventory> completeInv = new CompletableFuture<>();
+									ChatPlugin.onPlayerInvite(completeInv, false);
+									completeInv.thenAccept(
+											inventory -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+												if (inventory != null)
+													player.openInventory(inventory);
+											}));
+								case "gui.menu.list.e":
+									CompletableFuture<Inventory> completeInv2 = new CompletableFuture<>();
+									ChatPlugin.onPlayerRequest(completeInv2, false);
+									completeInv2.thenAccept(
+											inventory -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+												if (inventory != null)
+													player.openInventory(inventory);
+											}));
+								case "gui.menu.list.f":
+									player.openInventory(ChatPlugin.onPlayerDelete());
+								}
+							});
+				} else if (ChatPlugin.STORED_MUTEINVS.get(group) != null && ChatPlugin.STORED_MUTEINVS.get(group).contains(currentInventory)) {
+					ChatPlugin.iMute.getEntries().entrySet().stream()
+							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+								final String key = entry.getKey();
+								if (key.equals("gui.mute.list.next")) {
+									Iterator<Inventory> incIterator = ChatPlugin.STORED_MUTEINVS.get(group)
+											.descendingIterator();
+									iterationInfunc(incIterator, currentInventory, player);
+								} else if (key.equals("gui.mute.list.previous")) {
+									Iterator<Inventory> decIterator = ChatPlugin.STORED_MUTEINVS.get(group).iterator();
+									iterationInfunc(decIterator, currentInventory, player);
+								} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
+									System.out.println(entry.getKey());
+									player.performCommand("chatp mute " + entry.getKey());
+									player.closeInventory();
+								}
+							});
+				} else if (ChatPlugin.STORED_INVITEINVS.containsValue(currentInventory)) {
+					ChatPlugin.STORED_INVITEINVS.entrySet().stream()
+							.filter(entry_ -> entry_.getValue().equals(currentInventory)).forEach(entry_ -> {
+								final int currentIndex = entry_.getKey();
+								ChatPlugin.iInvite.getEntries().entrySet().stream()
+										.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+											final String key = entry.getKey();
+											if (key.equals("gui.invite.list.next")) {
+												if (ChatPlugin.STORED_INVITEINVS.containsKey(currentIndex + 1))
+													player.openInventory(
+															ChatPlugin.STORED_INVITEINVS.get(currentIndex + 1));
+											} else if (key.equals("gui.invite.list.previous")) {
+												if (ChatPlugin.STORED_INVITEINVS.containsKey(currentIndex - 1))
+													player.openInventory(
+															ChatPlugin.STORED_INVITEINVS.get(currentIndex - 1));
+											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
+												System.out.println(entry.getKey());
+												player.performCommand("chatp invite " + entry.getKey());
+												player.closeInventory();
+											}
+										});
+							});
+				} else if (ChatPlugin.STORED_REQUESTINVS.containsValue(currentInventory)) {
+					ChatPlugin.STORED_REQUESTINVS.entrySet().stream()
+							.filter(entry_ -> entry_.getValue().equals(currentInventory)).forEach(entry_ -> {
+								final int currentIndex = entry_.getKey();
+								ChatPlugin.iRequest.getEntries().entrySet().stream()
+										.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+											final String key = entry.getKey();
+											if (key.equals("gui.request.list.next")) {
+												if (ChatPlugin.STORED_REQUESTINVS.containsKey(currentIndex + 1))
+													player.openInventory(
+															ChatPlugin.STORED_REQUESTINVS.get(currentIndex + 1));
+											} else if (key.equals("gui.request.list.previous")) {
+												if (ChatPlugin.STORED_REQUESTINVS.containsKey(currentIndex - 1))
+													player.openInventory(
+															ChatPlugin.STORED_REQUESTINVS.get(currentIndex - 1));
+											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
+												System.out.println(entry.getKey());
+												player.performCommand("chatp request " + entry.getKey());
+												player.closeInventory();
+											}
+										});
+							});
+				} else if (ChatPlugin.storedDelete.equals(currentInventory)) {
+					ChatPlugin.iDelete.getEntries().entrySet().stream()
+							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+								final String key = entry.getKey();
+								switch (key) {
+								case "gui.delete.list.true":
+									player.performCommand("chatp group delete " + group);
+									player.closeInventory();
+								case "gui.delete.list.false":
+									player.closeInventory();
+								}
+							});
+				}
+
+			});
+		});
+	}
+
+	private void iterationInfunc(Iterator<Inventory> iterator, Inventory currentInventory, Player player) {
+		if (iterator.hasNext()) {
+			Inventory nextInv = iterator.next();
+			if (nextInv.equals(currentInventory))
+				if (iterator.hasNext())
+					player.openInventory(iterator.next());
+				else {
+					ChatPlugin.sendACMSG(player, "chatp.mute.noMorePage", "&cThere is no more page");
+					player.closeInventory();
+				}
+			else {
+				iterator.next();
+				iterationInfunc(iterator, currentInventory, player);
+			}
 		}
-		e.setCancelled(true);
 	}
 
 }

@@ -28,8 +28,6 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 
-import com.google.common.collect.ImmutableList;
-
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
 import shayegan8.github.events.*;
@@ -40,7 +38,7 @@ import shayegan8.github.gui.IInvite;
 import shayegan8.github.gui.IMenu;
 import shayegan8.github.gui.IMute;
 import shayegan8.github.gui.IRequest;
-import shayegan8.github.gui.ItemSaver;
+import shayegan8.github.gui.IState;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,7 +51,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -226,18 +223,19 @@ public final class ChatPlugin extends JavaPlugin {
 		return head;
 	}
 
-	public static ItemSaver getSkullOfOwner(Player player) {
+	public static ItemStack getSkullOfOwner(Player player) {
 		final ItemStack head = new ItemStack(Material.PLAYER_HEAD);
 		final SkullMeta meta = (SkullMeta) head.getItemMeta();
 		meta.setOwnerProfile(player.getPlayerProfile());
 		head.setItemMeta(meta);
-		return new ItemSaver(head, player);
+		return head;
 	}
 
 	public static Inventory onPlayerMenu() {
 		if (CALL_ONCEMENU.get())
 			return storedMenu;
 		normalFiller(iMenu.getEntries(), storedMenu);
+		STATES.put(storedMenu, IState.IMPORTANT);
 		CALL_ONCEMENU.lazySet(true);
 		return storedMenu;
 	}
@@ -262,11 +260,13 @@ public final class ChatPlugin extends JavaPlugin {
 	public static Inventory onPlayerDelete() {
 		if (CALL_ONCEDELETE.get())
 			return storedDelete;
-		normalFiller(iMenu.getEntries(), storedDelete);
+		normalFiller(iDelete.getEntries(), storedDelete);
+		STATES.put(storedDelete, IState.IMPORTANT);
 		CALL_ONCEDELETE.lazySet(true);
 		return storedDelete;
 	}
 
+	public static final ConcurrentHashMap<Inventory, IState> STATES = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<String, ConcurrentLinkedDeque<Inventory>> STORED_MUTEINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<Integer, Inventory> STORED_INVITEINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<Integer, Inventory> STORED_REQUESTINVS = new ConcurrentHashMap<>();
@@ -281,8 +281,7 @@ public final class ChatPlugin extends JavaPlugin {
 						if (Bukkit.getPlayer(eachUUID) == null)
 							return;
 						final Player skullPlayer = Bukkit.getPlayer(eachUUID);
-						final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
-						final ItemStack item = itemSave.item();
+						final ItemStack item = getSkullOfOwner(skullPlayer);
 						final ItemMeta meta = item.getItemMeta();
 						meta.setLore(iMute.getLore().stream().map(each -> ColorUtils.B(each))
 								.collect(Collectors.toUnmodifiableList()));
@@ -304,7 +303,8 @@ public final class ChatPlugin extends JavaPlugin {
 			System.out.println("first condition");
 			repeatIteration(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
-				inventories.addLast(inventory);
+				inventories.offer(inventory);
+				STATES.put(inventory, IState.IMPORTANT);
 				System.out.println("main thread onPlayerRepeat");
 				STORED_MUTEINVS.put(groupName, inventories);
 				callback.complete(STORED_MUTEINVS.get(groupName));
@@ -318,6 +318,7 @@ public final class ChatPlugin extends JavaPlugin {
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				checkingArea.lazySet(checkingArea.get() - emptySlots);
 				inventories.offer(inventory);
+				STATES.put(inventory, IState.IMPORTANT);
 			});
 			onPlayerRepeat(groupName, cloneList, empties, checkingArea, emptySlots, callback);
 		}
@@ -353,27 +354,25 @@ public final class ChatPlugin extends JavaPlugin {
 		CompletableFuture.runAsync(() -> {
 			Iterator<Integer> iterator = empties.iterator();
 			for (String eachGroup : cloneList)
-				if (iterator.hasNext()) {
-					MDatabase.getGroupAdmin(eachGroup).thenAccept(adminUUID -> {
-						Bukkit.getScheduler().runTask(getInstance(), () -> {
-							
-							final Player skullPlayer = Bukkit.getPlayer(adminUUID);
-							if (!skullPlayer.isOnline())
-								return;
-							final ItemSaver itemSave = getSkullOfOwner(skullPlayer);
-							final ItemStack item = itemSave.item();
-							final ItemMeta meta = item.getItemMeta();
-							meta.setLore(iRequest.getLore().stream().map(each -> ColorUtils.B(each))
-									.collect(Collectors.toUnmodifiableList()));
-							meta.setDisplayName(ColorUtils.B("&7" + skullPlayer.getName()));
-							item.setItemMeta(meta);
-							final int slot = iterator.next();
-							inventory.setItem(slot, item);
-							iRequest.getEntries().put(skullPlayer.getName(),
-									new Entry(null, item, null, 0, null, null));
-						});
-					});
-				}
+				if (!eachGroup.equals("none"))
+					if (iterator.hasNext()) {
+						MDatabase.getGroupAdmin(eachGroup)
+								.thenAccept(adminUUID -> Bukkit.getScheduler().runTask(getInstance(), () -> {
+									final Player skullPlayer = Bukkit.getPlayer(adminUUID);
+									if (!skullPlayer.isOnline())
+										return;
+									final ItemStack item = getSkullOfOwner(skullPlayer);
+									final ItemMeta meta = item.getItemMeta();
+									meta.setLore(iRequest.getLore().stream().map(each -> ColorUtils.B(each))
+											.collect(Collectors.toUnmodifiableList()));
+									meta.setDisplayName(ColorUtils.B("&7" + skullPlayer.getName()));
+									item.setItemMeta(meta);
+									final int slot = iterator.next();
+									inventory.setItem(slot, item);
+									iRequest.getEntries().put(skullPlayer.getName(),
+											new Entry(null, item, null, 0, null, null));
+								}));
+					}
 		}, EVIRTUAL);
 	}
 
@@ -384,6 +383,7 @@ public final class ChatPlugin extends JavaPlugin {
 			repeatIterationRequest(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				STORED_REQUESTINVS.put(pageNumber.get(), inventory);
+				STATES.put(inventory, IState.IMPORTANT);
 				callback.complete(STORED_REQUESTINVS.get(0));
 			});
 		} else {
@@ -392,6 +392,7 @@ public final class ChatPlugin extends JavaPlugin {
 				cloneList.removeLast();
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				checkingArea.lazySet(checkingArea.get() - emptySlots);
+				STATES.put(inventory, IState.IMPORTANT);
 				STORED_REQUESTINVS.put(pageNumber.getAndIncrement(), inventory);
 			});
 			onPlayerRepeatRequest(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
@@ -423,8 +424,7 @@ public final class ChatPlugin extends JavaPlugin {
 					Bukkit.getScheduler().runTask(plugin, () -> {
 						if (!eachPlayer.isOnline())
 							return;
-						final ItemSaver itemSave = getSkullOfOwner(eachPlayer);
-						final ItemStack item = itemSave.item();
+						final ItemStack item = getSkullOfOwner(eachPlayer);
 						final ItemMeta meta = item.getItemMeta();
 						meta.setLore(iInvite.getLore().stream().map(each -> ColorUtils.B(each))
 								.collect(Collectors.toUnmodifiableList()));
@@ -443,6 +443,7 @@ public final class ChatPlugin extends JavaPlugin {
 		if (checkingArea.get() < emptySlots) {
 			repeatIterationInvite(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
+				STATES.put(inventory, IState.IMPORTANT);
 				STORED_INVITEINVS.put(pageNumber.incrementAndGet(), inventory);
 				callback.complete(STORED_INVITEINVS.get(0));
 			});
@@ -452,6 +453,7 @@ public final class ChatPlugin extends JavaPlugin {
 				cloneList.removeLast();
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				checkingArea.lazySet(checkingArea.get() - emptySlots);
+				STATES.put(inventory, IState.IMPORTANT);
 				STORED_INVITEINVS.put(pageNumber.getAndIncrement(), inventory);
 			});
 			onPlayerRepeatInvite(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
@@ -462,9 +464,9 @@ public final class ChatPlugin extends JavaPlugin {
 		if (!STORED_INVITEINVS.isEmpty() && !update)
 			callback.complete(STORED_INVITEINVS.get(0));
 		else {
-			final List<Player> cloneList = ImmutableList.copyOf(Bukkit.getOnlinePlayers());
+			final List<Player> cloneList = List.copyOf(Bukkit.getOnlinePlayers());
 			final int playersSize = cloneList.size();
-			final List<Integer> empties = Collections.unmodifiableList(iRequest.getEmpties());
+			final List<Integer> empties = Collections.unmodifiableList(iInvite.getEmpties());
 			final int emptySlots = empties.size();
 			AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
 			AtomicInteger pageNumber = new AtomicInteger(0);

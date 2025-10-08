@@ -52,7 +52,7 @@ public class MDatabase {
 					+ " playerUUID BLOB PRIMARY KEY, " + "playerTag TEXT, " + "inGroup BOOLEAN, " + "muted BOOLEAN, "
 					+ "invited BOOLEAN, requested TEXT);");
 			pStatement.executeUpdate();
-			pStatement = connection.prepareStatement("INSERT INTO groups (groupName) VALUES (?)");
+			pStatement = connection.prepareStatement("INSERT OR IGNORE INTO groups (groupName) VALUES (?)");
 			pStatement.setString(1, "none");
 			pStatement.executeUpdate();
 		} catch (SQLException | IOException e) {

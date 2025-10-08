@@ -64,18 +64,15 @@ public class Grouping implements Listener {
 	public void onJoin(PlayerJoinEvent e) {
 		final Player player = e.getPlayer();
 		final UUID uuid = player.getUniqueId();
-		Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-			MDatabase.playerHasGroup(uuid).thenAccept(has -> {
-				System.out.println("player has not a group");
-				if (!has)
-					Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-						MDatabase.setPlayerGroup(uuid, "none");
-						MDatabase.setPlayerTag(uuid, "none");
-						MDatabase.setPlayerInGroup(uuid, false);
-						System.out.println("player should be fucked now");
-					});
+		MDatabase.playerHasGroup(uuid).thenAccept(has -> {
+			System.out.println("player has not a group");
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+				if (!has) {
+					MDatabase.setPlayerGroup(uuid, "none");
+					MDatabase.setPlayerTag(uuid, "none");
+					MDatabase.setPlayerInGroup(uuid, false);
+				}
 			});
-
 		});
 	}
 
