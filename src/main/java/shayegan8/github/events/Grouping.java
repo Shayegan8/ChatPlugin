@@ -9,6 +9,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+
+import com.google.common.collect.ImmutableList;
+
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
@@ -29,7 +32,7 @@ public class Grouping implements Listener {
 			Placeholders.updateTag(uuid);
 		e.setCancelled(true);
 		final String msg = e.getMessage();
-		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
+		ImmutableList.copyOf(Bukkit.getOnlinePlayers()).stream().forEach(eachPlayer -> {
 			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
 					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equals).thenCompose((condition) -> {
 						if (condition) {
@@ -66,17 +69,19 @@ public class Grouping implements Listener {
 		final UUID uuid = player.getUniqueId();
 		MDatabase.playerHasGroup(uuid).thenCompose(has -> {
 			if (!has) {
-				MDatabase.setPlayerGroup(uuid, "none");
-				MDatabase.setPlayerTag(uuid, "none");
-				MDatabase.setPlayerInGroup(uuid, false);
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+					MDatabase.setPlayerGroup(uuid, "none");
+					MDatabase.setPlayerTag(uuid, "none");
+					MDatabase.setPlayerInGroup(uuid, false);
+				});
 				return CompletableFuture.completedFuture(null);
 			} else {
 				return MDatabase.isPlayerInGroup(uuid);
 			}
 		}).thenCompose(inGroup -> {
-			ChatPlugin.updateInvite();
+			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> ChatPlugin.updateInvite());
 			if (inGroup == true) { // this can be null
-				ChatPlugin.updateMute(player);
+				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> ChatPlugin.updateMute(player));
 				return MDatabase.getPlayerGroup(uuid);
 			}
 			return CompletableFuture.completedFuture(null);
@@ -84,7 +89,7 @@ public class Grouping implements Listener {
 			if (group != null && !group.equals("none")) {
 				MDatabase.getGroupAdmin(group).thenAccept(groupAdminUUID -> {
 					if (groupAdminUUID.equals(uuid))
-						ChatPlugin.updateRequest();
+						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> ChatPlugin.updateRequest());
 				});
 			}
 		});
