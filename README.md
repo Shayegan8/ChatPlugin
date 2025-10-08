@@ -1,6 +1,8 @@
 # Description
 
-Chat plugin is a spigot plugin that lets your players to make their own private groups and chat with themselves 
+Chat plugin is a spigot plugin that lets your players to make their own private groups and chat with themselves
+
+Supported versions 1.13+
 
 ## Installation
 
@@ -11,6 +13,7 @@ cd ChatPlugin
 mvn clean install
 mvn clean package
 ```
+
 
 ### Dependencies used
 - **Sqlite & Postgresql JDBC drivers**
