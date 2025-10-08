@@ -13,7 +13,7 @@ mvn clean package
 ```
 
 ### Dependencies used
-- **Sqlite & Postgresql JDBC Drivers**
+- **Sqlite & Postgresql JDBC drivers**
 - **PlaceholderAPI**
 - **Spigot plugin annotations**
 - **lombok**
