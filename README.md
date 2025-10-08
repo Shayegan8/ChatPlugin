@@ -19,7 +19,7 @@ mvn clean package
 - **lombok**
 
 ### Requirements
-- ###### Java 21 or higher
+- ###### Java 21 or higher (because of virtual threads)
 
 ### Java concepts
 - Concurrency
