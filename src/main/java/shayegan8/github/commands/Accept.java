@@ -49,7 +49,6 @@ public class Accept extends CommandManager {
 								"&cThe player didn't request to join your group");
 						return;
 					}
-					System.out.println("groups are the same");
 					MDatabase.getPlayerGroup(player.getUniqueId()).thenAccept(senderGroup -> {
 						Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
 							final Player argPlayer = Bukkit.getPlayer(argUUID);
