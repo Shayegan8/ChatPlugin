@@ -49,7 +49,7 @@ public class Join extends CommandManager {
 					});
 				});
 			}
-		}).exceptionallyAsync(exp -> {
+		}).exceptionally(exp -> {
 			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 		});
 	}

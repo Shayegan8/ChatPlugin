@@ -36,6 +36,7 @@ public class Mute extends CommandManager {
 			ChatPlugin.sendACMSG(player, "chatp.mute.cantPlayer", "&cCant find this player");
 			return;
 		}
+		
 		final UUID senderUUID = player.getUniqueId();
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
 

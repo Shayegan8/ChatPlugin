@@ -43,7 +43,7 @@ public class Group extends CommandManager {
 					.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help"), ChatPlugin.EVIRTUAL)
 					.thenAccept(ls -> ls.forEach(str -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
 							() -> sender.sendMessage(ColorUtils.B(str)))))
-					.exceptionallyAsync(exp -> {
+					.exceptionally(exp -> {
 						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
 		} else
@@ -71,6 +71,8 @@ public class Group extends CommandManager {
 					ChatPlugin.updateMute(player);
 					ChatPlugin.updateRequest();
 					ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");
+				}).exceptionally(exp -> {
+					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 				});
 				break;
 			case "delete":
@@ -96,18 +98,20 @@ public class Group extends CommandManager {
 								final Player eachPlayer = Bukkit.getPlayer(eachUUID);
 								if (!eachPlayer.isOnline())
 									return;
-								ChatPlugin.sendCMSG(Bukkit.getPlayer(uuid), "chatp.group.deleted",
-										"&cYour group has been deleted");
 								MDatabase.deleteGroup(args[1]);
+								MDatabase.setPlayerGroup(eachUUID, "none");
+								Placeholders.updateGroup(eachUUID);
 								MDatabase.setPlayerInGroup(eachUUID, false);
 								MDatabase.setPlayerTag(eachUUID, "none");
 								Placeholders.updateTag(eachUUID);
-								MDatabase.setPlayerGroup(eachUUID, "none");
-								Placeholders.updateGroup(eachUUID);
+								ChatPlugin.sendCMSG(Bukkit.getPlayer(uuid), "chatp.group.deleted",
+										"&cYour group has been deleted");
 								ChatPlugin.STORED_MUTEINVS.remove(args[1]);
 								ChatPlugin.updateRequest();
 							});
 						});
+					}).exceptionally(exp -> {
+						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
 				});
 				break;
@@ -120,7 +124,7 @@ public class Group extends CommandManager {
 							Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
 									() -> sender.sendMessage(ColorUtils.C(player, str)));
 						});
-					}).exceptionallyAsync(exp -> {
+					}).exceptionally(exp -> {
 						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 					});
 		} else

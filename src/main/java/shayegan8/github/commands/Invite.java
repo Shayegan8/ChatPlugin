@@ -13,6 +13,7 @@ import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -73,6 +74,8 @@ public class Invite extends CommandManager {
 				ChatPlugin.sendACMSG(player, "chatp.invite.sent", "&aInvite successfully has been sent");
 				Bukkit.getPlayer(args[0]).spigot().sendMessage(msg);
 			});
+		}).exceptionally(exp -> {
+			throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 		});
 	}
 }

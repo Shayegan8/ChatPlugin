@@ -29,7 +29,7 @@ public class Help extends CommandManager {
 							Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
 									() -> sender.sendMessage(ColorUtils.B(str)));
 					});
-				}).exceptionallyAsync(exp -> {
+				}).exceptionally(exp -> {
 					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
 				});
 	}

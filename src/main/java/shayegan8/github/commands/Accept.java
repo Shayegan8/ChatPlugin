@@ -37,10 +37,6 @@ public class Accept extends CommandManager {
 		}
 
 		final UUID argUUID = Bukkit.getPlayer(args[0]).getUniqueId();
-		if (!Bukkit.getPlayer(argUUID).isOnline()) {
-			ChatPlugin.sendACMSG(player, "chatp.accept.notOnline", "&cPlayer it's not online");
-			return;
-		}
 		MDatabase.getPlayerRequest(argUUID)
 				.thenCombine(MDatabase.getPlayerGroup(player.getUniqueId()), String::equals)
 				.thenAccept(groupSame -> {

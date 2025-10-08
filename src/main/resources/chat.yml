@@ -1,3 +1,5 @@
+update: false
+cooldown: false
 chatp:
    playerchat: '&e%player_name% %chatp_group%&r&8: &7{msg}'
    help:
@@ -28,13 +30,22 @@ chatp:
       removed: '%player_name% &asuccessfully removed'
       cant: '&cYou are not admin or staff'
       error: '&cAn error occurred'
+   menu:
+      notPlayer: '&cYou should be a player'
    reload:
       usage: '&e/chatp reload'
-      error: '&cAn error occurred'
    quit:
-      usage: '&e/chatp reload'
+      quit: "&eYou are no longer in this group"
+      usage: '&e/chatp quit'
+      notPlayer: "&cYou should be a player"
       notGroup: '&cYou are not in any group'
       error: '&cAn error occurred'
+   accept:
+      notPlayer: '&cYou should be a player'
+      usage: '&e/chatp accept &cplayerName'
+      notFound: '&cCant find this player :('
+      notSame: '&cThe player didn''t request to join your group'
+      fucked: '&eYou are now in %chatp_group% group'
    mute:
       usage: '&e/chatp mute playername'
       cantPlayer: '&cCant find this player'
@@ -42,11 +53,14 @@ chatp:
       notSame: '&cYou or that player should be in a group'
       muted: '&ePlayer muted'
       cantMute: '&cYou cant mute this player'
+      cantFuckYourself: "&cYou cant mute yourself"
+      muted: "&ePlayer muted"
       error: '&cAn error occurred'
    join:
       usage: '&e/chatp join groupname'
       notPlayer: '&cYou should be a player'
       invitedFirst: '&eYou should be invited first'
+      invited: "&eYou are now in %chatp_group% group"
       error: '&cAn error occurred'
    invite:
       usage: '&e/chatp invite playername'
@@ -58,7 +72,6 @@ chatp:
       joinMSG: |-
          %player_name% Invited you to %chatp_group%
          &eClick this messaage to join
-      error: '&cAn error occurred'
    group:
       help:
       - '&cPlayer help &8- &e&lGroup &r&7(%chatp_group%)'
@@ -72,9 +85,23 @@ chatp:
       created: '&e%chatp_group% &ahas been created'
       deleted: '&e%chatp_group% &chas been deleted'
       usage: '&e/chatp group help,create,delete'
+      cantCreate: "&cYou are already in a group"
+      notExist: "&cThat group dosent exist"
+      notIn: "&cYou are not in any group"
+      admin: "&eYou are not admin"
    staff:
       usage: '&e/chatp staff {playerName}'
       cantFind: '&cCant find this player'
       cantFuckYourself: '&cYou are admin ;|'
       cantFuckIt: '&cYou should be admin'
       promoted: '&e%player_name% &aSuccessfully promoted'
+   request:
+      notPlayer: "&cYou should be a player"
+      usage: "&e/chatp remove &cplayerName"
+      notFound: "&cCant find this player :("
+      cantFuckYourself: "&cYou can't send request to yourself"
+      dontGroup: "&cThat player dosent have group"
+      joinMSG: "%player_name% requested to join to your group\n&eClick this messaage to accept request"
+      bar: "&eClick this to join to the group"
+      sent: "&aRequest successfully has been sent"
+       
