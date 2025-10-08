@@ -13,24 +13,14 @@ import org.bukkit.inventory.ItemStack;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
+@Getter
 public final class IMute {
 
-	@Getter
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
-	
-	@Getter
 	private final List<Integer> empties;
-	
-	@Getter
 	private final String title;
-	
-	@Getter
 	private final List<String> lore;
-	
-	@Getter
 	private final int size;
-
-	public final static String NAME = "mute";
 
 	public IMute() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.mute.emptyLore").stream()

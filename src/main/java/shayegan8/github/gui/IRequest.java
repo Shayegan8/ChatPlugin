@@ -13,21 +13,15 @@ import org.bukkit.inventory.ItemStack;
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
 
+@Getter
 public final class IRequest {
 
-	@Getter
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
-	@Getter
 	private final List<Integer> empties;
-	@Getter
 	private final String title;
-	@Getter
 	private final List<String> lore;
-	@Getter
 	private final int size;
 	
-	public final static String NAME = "request";
-
 	public IRequest() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.request.emptyLore").stream().collect(Collectors.toUnmodifiableList());
 		title = ChatPlugin.configuration_menu.getString("gui.request.title", "&cRequest to groups");
