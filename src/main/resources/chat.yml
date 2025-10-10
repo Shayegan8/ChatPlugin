@@ -15,6 +15,8 @@ chatp:
       - '&c- &e/chatp invite {playerName}'
       - '&c- &e/chatp staff {playerName}'
       - '&c- &e/chatp quit'
+      - '&c- &e/chatp request {playerName}'
+      - '&c- &e/chatp accept {playerName}'
       - '&c- &e/chatp menu'
       - '&r'
       - '&e&lChatPlugin &r&9https://github.com/Shayegan8/ChatPlugin'
