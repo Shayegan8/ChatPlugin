@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 @Getter
 public final class IDelete {
@@ -20,7 +21,7 @@ public final class IDelete {
 	private final int size;
 
 	public IDelete() {
-		title = ChatPlugin.configuration_menu.getString("gui.delete.title", "&cAre you sure about it?");
+		title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.delete.title", "&cAre you sure about it?"));
 		size = ChatPlugin.configuration_menu.getInt("gui.delete.size", 9);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.delete.list").getKeys(false).forEach(each -> {
 			String newStr = "gui.delete.list." + each;

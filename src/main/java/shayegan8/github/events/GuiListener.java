@@ -23,7 +23,7 @@ public class GuiListener implements Listener {
 		final Inventory currentInventory = player.getOpenInventory().getTopInventory();
 		if (currentInventory == null)
 			return;
-		if (ChatPlugin.STATES.containsKey(currentInventory))
+		if (ChatPlugin.STATES.contains(currentInventory))
 			e.setCancelled(true);
 	}
 
@@ -38,7 +38,7 @@ public class GuiListener implements Listener {
 					return;
 				if (ChatPlugin.storedMenu.equals(currentInventory)) {
 					ChatPlugin.iMenu.getEntries().entrySet().stream()
-							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+							.filter(entry -> entry.getValue().getItem().equals(currentItem)).forEach(entry -> {
 								switch (entry.getKey()) {
 								case "gui.menu.list.c":
 									player.closeInventory();
@@ -57,11 +57,15 @@ public class GuiListener implements Listener {
 									break;
 								case "gui.menu.list.d":
 									CompletableFuture<Inventory> completeInv = new CompletableFuture<>();
+									System.out.println("inventory future");
 									ChatPlugin.onPlayerInvite(completeInv, false);
+									System.out.println("onPlayerInvite");
 									completeInv.thenAccept(
 											inventory -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-												if (inventory != null)
+												if (inventory != null) {
+													System.out.println("opening inventory");
 													player.openInventory(inventory);
+												}
 											}));
 								case "gui.menu.list.e":
 									CompletableFuture<Inventory> completeInv2 = new CompletableFuture<>();
@@ -75,9 +79,10 @@ public class GuiListener implements Listener {
 									player.openInventory(ChatPlugin.onPlayerDelete());
 								}
 							});
-				} else if (ChatPlugin.STORED_MUTEINVS.get(group) != null && ChatPlugin.STORED_MUTEINVS.get(group).contains(currentInventory)) {
+				} else if (ChatPlugin.STORED_MUTEINVS.get(group) != null
+						&& ChatPlugin.STORED_MUTEINVS.get(group).contains(currentInventory)) {
 					ChatPlugin.iMute.getEntries().entrySet().stream()
-							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+							.filter(entry -> entry.getValue().getItem().equals(currentItem)).forEach(entry -> {
 								final String key = entry.getKey();
 								if (key.equals("gui.mute.list.next")) {
 									Iterator<Inventory> incIterator = ChatPlugin.STORED_MUTEINVS.get(group)
@@ -86,7 +91,7 @@ public class GuiListener implements Listener {
 								} else if (key.equals("gui.mute.list.previous")) {
 									Iterator<Inventory> decIterator = ChatPlugin.STORED_MUTEINVS.get(group).iterator();
 									iterationInfunc(decIterator, currentInventory, player);
-								} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
+								} else if (entry.getValue().getItem().getType() == Material.PLAYER_HEAD) {
 									player.performCommand("chatp mute " + entry.getKey());
 									player.closeInventory();
 								}
@@ -96,14 +101,15 @@ public class GuiListener implements Listener {
 							.filter(entry_ -> entry_.getValue().equals(currentInventory)).forEach(entry_ -> {
 								final int currentIndex = entry_.getKey();
 								ChatPlugin.iInvite.getEntries().entrySet().stream()
-										.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+										.filter(entry -> entry.getValue().getItem().equals(currentItem)).forEach(entry -> {
 											final String key = entry.getKey();
 											if (key.equals("gui.invite.list.next")) {
 												if (ChatPlugin.STORED_INVITEINVS.containsKey(currentIndex + 1))
 													player.openInventory(
 															ChatPlugin.STORED_INVITEINVS.get(currentIndex + 1));
 												else {
-													ChatPlugin.sendACMSG(player, "chatp.invite.noMorePage", "&cThere is no more page");
+													ChatPlugin.sendACMSG(player, "chatp.invite.noMorePage",
+															"&cThere is no more page");
 													player.closeInventory();
 												}
 											} else if (key.equals("gui.invite.list.previous")) {
@@ -111,10 +117,11 @@ public class GuiListener implements Listener {
 													player.openInventory(
 															ChatPlugin.STORED_INVITEINVS.get(currentIndex - 1));
 												else {
-													ChatPlugin.sendACMSG(player, "chatp.invite.noMorePage", "&cThere is no more page");
+													ChatPlugin.sendACMSG(player, "chatp.invite.noMorePage",
+															"&cThere is no more page");
 													player.closeInventory();
 												}
-											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
+											} else if (entry.getValue().getItem().getType() == Material.PLAYER_HEAD) {
 												player.performCommand("chatp invite " + entry.getKey());
 												player.closeInventory();
 											}
@@ -125,14 +132,15 @@ public class GuiListener implements Listener {
 							.filter(entry_ -> entry_.getValue().equals(currentInventory)).forEach(entry_ -> {
 								final int currentIndex = entry_.getKey();
 								ChatPlugin.iRequest.getEntries().entrySet().stream()
-										.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+										.filter(entry -> entry.getValue().getItem().equals(currentItem)).forEach(entry -> {
 											final String key = entry.getKey();
 											if (key.equals("gui.request.list.next")) {
 												if (ChatPlugin.STORED_REQUESTINVS.containsKey(currentIndex + 1))
 													player.openInventory(
 															ChatPlugin.STORED_REQUESTINVS.get(currentIndex + 1));
 												else {
-													ChatPlugin.sendACMSG(player, "chatp.request.noMorePage", "&cThere is no more page");
+													ChatPlugin.sendACMSG(player, "chatp.request.noMorePage",
+															"&cThere is no more page");
 													player.closeInventory();
 												}
 											} else if (key.equals("gui.request.list.previous")) {
@@ -140,10 +148,11 @@ public class GuiListener implements Listener {
 													player.openInventory(
 															ChatPlugin.STORED_REQUESTINVS.get(currentIndex - 1));
 												else {
-													ChatPlugin.sendACMSG(player, "chatp.request.noMorePage", "&cThere is no more page");
+													ChatPlugin.sendACMSG(player, "chatp.request.noMorePage",
+															"&cThere is no more page");
 													player.closeInventory();
 												}
-											} else if (entry.getValue().item().getType() == Material.PLAYER_HEAD) {
+											} else if (entry.getValue().getItem().getType() == Material.PLAYER_HEAD) {
 												player.performCommand("chatp request " + entry.getKey());
 												player.closeInventory();
 											}
@@ -151,7 +160,7 @@ public class GuiListener implements Listener {
 							});
 				} else if (ChatPlugin.storedDelete.equals(currentInventory)) {
 					ChatPlugin.iDelete.getEntries().entrySet().stream()
-							.filter(entry -> entry.getValue().item().equals(currentItem)).forEach(entry -> {
+							.filter(entry -> entry.getValue().getItem().equals(currentItem)).forEach(entry -> {
 								final String key = entry.getKey();
 								switch (key) {
 								case "gui.delete.list.true":

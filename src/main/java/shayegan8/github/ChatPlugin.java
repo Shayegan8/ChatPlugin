@@ -27,6 +27,11 @@ import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import com.google.common.collect.ImmutableList;
 
 import shayegan8.github.commands.*;
 import shayegan8.github.database.MDatabase;
@@ -38,11 +43,12 @@ import shayegan8.github.gui.IInvite;
 import shayegan8.github.gui.IMenu;
 import shayegan8.github.gui.IMute;
 import shayegan8.github.gui.IRequest;
-import shayegan8.github.gui.IState;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -60,11 +66,15 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 @Plugin(name = "ChatPlugin", version = "1.0.1")
 @Description("Simple chat plugin :O")
@@ -102,9 +112,10 @@ public final class ChatPlugin extends JavaPlugin {
 	private static final String GREEN = "\u001b[32m";
 	private static final String RED = "\u001b[31m";
 	private static final String REFRESH = "\u001b[0m";
-	private static final String URL = "";
+	private static final String URL = "https://github.com/Shayegan8/ChatPlugin/releases/latest/download/ChatPlugin.jar";
+	private static final String POM_URL = "https://raw.githubusercontent.com/Shayegan8/ChatPlugin/refs/heads/guiAwesome/pom.xml";
+	private static final String VERSION = "1.0.1";
 	public static final ExecutorService EVIRTUAL = Executors.newVirtualThreadPerTaskExecutor();
-	private FileOutputStream fout;
 	public static IMute iMute;
 	public static IMenu iMenu;
 	public static IInvite iInvite;
@@ -158,8 +169,8 @@ public final class ChatPlugin extends JavaPlugin {
 		createConfig();
 		entries = sectionSaver();
 		getLogger().info("Registering commands...");
-		this.getCommand("chatp").setExecutor(new BaseCommand(new CooldownManager()));
-		this.getCommand("chatp").setTabCompleter(new BaseCommand(new CooldownManager()));
+		this.getCommand("chatp").setExecutor(new BaseCommand());
+		this.getCommand("chatp").setTabCompleter(new BaseCommand());
 		getLogger().info("Establishing connection to database...");
 		mDB = new MDatabase(configuration.getString("dbName", "sqlite"));
 		getLogger().info("Registering guis...");
@@ -174,19 +185,30 @@ public final class ChatPlugin extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new Grouping(), this);
 		getServer().getPluginManager().registerEvents(new GuiListener(), this);
 		if (configuration.getBoolean("update", false)) {
-			try {
-				getLogger().info("Update is enabled...");
-				ReadableByteChannel channel = Channels.newChannel(new URI(URL).toURL().openStream());
-				Path path = Path.of("plugins/update");
-				if (Files.notExists(path))
-					Files.createDirectory(path);
-				fout = new FileOutputStream("plugins/updates/");
-				FileChannel fc = fout.getChannel();
-				getLogger().info("Downloading...");
-				fc.transferFrom(channel, 0, Long.MAX_VALUE);
-			} finally {
-				fout.close();
+			getLogger().info("updating...");
+			String[] latestVersion = versionFinder(documentBuilder()).split("\\.");
+			String[] currentVersion = VERSION.split("\\.");
+			boolean fuckass = true;
+			for (int i = 0; i < 3; i++) {
+				int latestPart = Integer.parseInt(latestVersion[i]);
+				int currentPart = Integer.parseInt(currentVersion[i]);
+				if (latestPart > currentPart) {
+					getLogger().info("version is old, trying to download latest jar");
+					ReadableByteChannel readable = Channels.newChannel(URI.create(URL).toURL().openStream());
+					Path path = Path.of(getDataFolder() + "/updates");
+					if (Files.notExists(path))
+						Files.createDirectory(path);
+					FileOutputStream output = new FileOutputStream(
+							Path.of(getDataFolder() + "/updates/latest.jar").toFile());
+					FileChannel channel = output.getChannel();
+					channel.transferFrom(readable, 0, Long.MAX_VALUE);
+					getLogger().info("latest.jar saved in plugins/ChatPlugin/updates/latest.jar");
+					break;
+				} else
+					fuckass = false;
 			}
+			if (fuckass)
+				getLogger().info("you are using latest version");
 		}
 		getLogger().info("Registering placeholders (PlaceholderAPI)");
 		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
@@ -196,6 +218,23 @@ public final class ChatPlugin extends JavaPlugin {
 			getLogger().info(RED + "Couldn't find PlaceholderAPI, disabling plugin..." + REFRESH);
 			getPluginLoader().disablePlugin(this);
 		}
+	}
+
+	@SneakyThrows
+	private Document documentBuilder() {
+		HttpURLConnection conn = (HttpURLConnection) URI.create(POM_URL).toURL().openConnection();
+		conn.setRequestMethod("GET");
+		try (InputStream input = conn.getInputStream()) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			return builder.parse(input);
+		}
+	}
+
+	private String versionFinder(Document document) {
+		NodeList nodes = document.getElementsByTagName("version");
+		Element element = (Element) nodes.item(0);
+		return element.getTextContent();
 	}
 
 	@Override
@@ -235,20 +274,23 @@ public final class ChatPlugin extends JavaPlugin {
 		if (CALL_ONCEMENU.get())
 			return storedMenu;
 		normalFiller(iMenu.getEntries(), storedMenu);
-		STATES.put(storedMenu, IState.IMPORTANT);
+		STATES.offer(storedMenu);
 		CALL_ONCEMENU.lazySet(true);
 		return storedMenu;
 	}
 
+	@SuppressWarnings("deprecation")
 	private static void normalFiller(Map<String, Entry> entries, Inventory inv) {
 		entries.entrySet().stream().forEach((entry) -> {
-			final Entry value = entry.getValue();
-			final ItemStack item = value.item();
-			value.slots().forEach(slot -> {
+			if(Collections.unmodifiableList(List.of(Bukkit.getOfflinePlayers())).contains(Bukkit.getOfflinePlayer(entry.getKey())))
+				return;
+			Entry value = entry.getValue();
+			final ItemStack item = value.getItem();
+			value.getSlots().forEach(slot -> {
 				Bukkit.getScheduler().runTask(getInstance(), () -> {
 					final ItemMeta meta = item.getItemMeta();
-					meta.setDisplayName(ColorUtils.B(value.displayName()));
-					meta.setLore(value.lore().stream().map(each -> ColorUtils.B(each)).collect(Collectors.toList()));
+					meta.setDisplayName(ColorUtils.B(value.getDisplayName()));
+					meta.setLore(value.getLore().stream().map(each -> ColorUtils.B(each)).collect(Collectors.toList()));
 					item.setItemMeta(meta);
 					inv.setItem(slot, item);
 				});
@@ -260,12 +302,12 @@ public final class ChatPlugin extends JavaPlugin {
 		if (CALL_ONCEDELETE.get())
 			return storedDelete;
 		normalFiller(iDelete.getEntries(), storedDelete);
-		STATES.put(storedDelete, IState.IMPORTANT);
+		STATES.offer(storedDelete);
 		CALL_ONCEDELETE.lazySet(true);
 		return storedDelete;
 	}
 
-	public static final ConcurrentHashMap<Inventory, IState> STATES = new ConcurrentHashMap<>();
+	public static final ConcurrentLinkedQueue<Inventory> STATES = new ConcurrentLinkedQueue<>();
 	public static final ConcurrentHashMap<String, ConcurrentLinkedDeque<Inventory>> STORED_MUTEINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<Integer, Inventory> STORED_INVITEINVS = new ConcurrentHashMap<>();
 	public static final ConcurrentHashMap<Integer, Inventory> STORED_REQUESTINVS = new ConcurrentHashMap<>();
@@ -296,12 +338,12 @@ public final class ChatPlugin extends JavaPlugin {
 	private static void onPlayerRepeat(String groupName, List<UUID> cloneList, List<Integer> empties,
 			AtomicInteger checkingArea, int emptySlots, CompletableFuture<ConcurrentLinkedDeque<Inventory>> callback) {
 		final ConcurrentLinkedDeque<Inventory> inventories = new ConcurrentLinkedDeque<Inventory>();
-		Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
+		final Inventory inventory = Bukkit.createInventory(null, iMute.getSize(), iMute.getTitle());
 		if (checkingArea.get() < emptySlots) {
 			repeatIteration(empties, cloneList, inventory);
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				inventories.offer(inventory);
-				STATES.put(inventory, IState.IMPORTANT);
+				STATES.offer(inventory);
 				STORED_MUTEINVS.put(groupName, inventories);
 				callback.complete(STORED_MUTEINVS.get(groupName));
 			});
@@ -312,7 +354,7 @@ public final class ChatPlugin extends JavaPlugin {
 			Bukkit.getScheduler().runTask(plugin, () -> {
 				checkingArea.lazySet(checkingArea.get() - emptySlots);
 				inventories.offer(inventory);
-				STATES.put(inventory, IState.IMPORTANT);
+				STATES.offer(inventory);
 			});
 			onPlayerRepeat(groupName, cloneList, empties, checkingArea, emptySlots, callback);
 		}
@@ -366,23 +408,21 @@ public final class ChatPlugin extends JavaPlugin {
 
 	private static void onPlayerRepeatRequest(AtomicInteger pageNumber, List<String> cloneList, List<Integer> empties,
 			AtomicInteger checkingArea, int emptySlots, CompletableFuture<Inventory> callback) {
-		Inventory inventory = Bukkit.createInventory(null, iRequest.getSize(), iRequest.getTitle());
+		final Inventory inventory = Bukkit.createInventory(null, iRequest.getSize(), iRequest.getTitle());
 		if (checkingArea.get() < emptySlots) {
 			repeatIterationRequest(empties, cloneList, inventory);
-			Bukkit.getScheduler().runTask(plugin, () -> {
-				STORED_REQUESTINVS.put(pageNumber.get(), inventory);
-				STATES.put(inventory, IState.IMPORTANT);
-				callback.complete(STORED_REQUESTINVS.get(0));
-			});
+			STORED_REQUESTINVS.put(pageNumber.get(), inventory);
+			STATES.offer(inventory);
+			callback.complete(STORED_REQUESTINVS.get(0));
 		} else {
 			repeatIterationRequest(empties, cloneList, inventory);
-			for (int remove = 1; remove < emptySlots; remove++)
-				cloneList.removeLast();
-			Bukkit.getScheduler().runTask(plugin, () -> {
-				checkingArea.lazySet(checkingArea.get() - emptySlots);
-				STATES.put(inventory, IState.IMPORTANT);
-				STORED_REQUESTINVS.put(pageNumber.getAndIncrement(), inventory);
-			});
+			CompletableFuture.runAsync(() -> {
+				for (int remove = 1; remove < emptySlots; remove++)
+					cloneList.removeLast();
+			}, EVIRTUAL);
+			checkingArea.lazySet(checkingArea.get() - emptySlots);
+			STATES.offer(inventory);
+			STORED_REQUESTINVS.put(pageNumber.getAndIncrement(), inventory);
 			onPlayerRepeatRequest(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
 		}
 	}
@@ -403,61 +443,77 @@ public final class ChatPlugin extends JavaPlugin {
 		});
 	}
 
-	private static void repeatIterationInvite(List<Integer> empties, List<Player> cloneList, Inventory inventory) {
+	private static void repeatIterationInvite(List<Integer> empties, ImmutableList<Player> cloneList,
+			Inventory inventory) {
 		normalFiller(iInvite.getEntries(), inventory);
 		CompletableFuture.runAsync(() -> {
 			Iterator<Integer> iterator = empties.iterator();
-			for (final Player eachPlayer : cloneList)
-				if (iterator.hasNext())
+			System.out.println("Player list size: " + cloneList.size() + "\nIterating player's names");
+			cloneList.forEach(each -> System.out.println(each.getName()));
+			for (Player eachPlayer : cloneList) {
+				if (iterator.hasNext()) {
 					Bukkit.getScheduler().runTask(plugin, () -> {
-						if (!eachPlayer.isOnline())
-							return;
 						final ItemStack item = getSkullOfOwner(eachPlayer);
+						System.out.println("Material type: " + item.getType().name());
 						final ItemMeta meta = item.getItemMeta();
-						meta.setLore(iInvite.getLore().stream().map(each -> ColorUtils.B(each))
-								.collect(Collectors.toUnmodifiableList()));
-						meta.setDisplayName(ColorUtils.B("&7" + eachPlayer.getName()));
+						System.out.println("successfully item datas obtained");
+						final var lore = iInvite.getLore().stream().map(each -> ColorUtils.B(each))
+								.collect(Collectors.toUnmodifiableList());
+						meta.setLore(lore);
+						final var displayName = ColorUtils.B("&7" + eachPlayer.getName());
+						meta.setDisplayName(displayName);
 						item.setItemMeta(meta);
+						System.out.println("item meta has been set");
 						final int slot = iterator.next();
+						System.out.println("slot destination: " + slot);
 						inventory.setItem(slot, item);
-						iInvite.getEntries().put(eachPlayer.getName(), new Entry(null, item, null, 0, null, null));
+						System.out.println("inventory setItem(slot, item)");
+						iMute.getEntries().put(eachPlayer.getName(), new Entry(null, item, null, 0, null, null));
 					});
+				}
+			}
 		}, EVIRTUAL);
 	}
 
-	private static void onPlayerRepeatInvite(AtomicInteger pageNumber, List<Player> cloneList, List<Integer> empties,
-			AtomicInteger checkingArea, int emptySlots, CompletableFuture<Inventory> callback) {
+	private static void onPlayerRepeatInvite(AtomicInteger pageNumber, ImmutableList<Player> cloneList,
+			List<Integer> empties, AtomicInteger checkingArea, int emptySlots, CompletableFuture<Inventory> callback) {
 		Inventory inventory = Bukkit.createInventory(null, iInvite.getSize(), iInvite.getTitle());
+		System.out.println("constant inventory created");
 		if (checkingArea.get() < emptySlots) {
+			System.out.println("first condition/repeating iteration invite");
 			repeatIterationInvite(empties, cloneList, inventory);
-			Bukkit.getScheduler().runTask(plugin, () -> {
-				STATES.put(inventory, IState.IMPORTANT);
-				STORED_INVITEINVS.put(pageNumber.incrementAndGet(), inventory);
-				callback.complete(STORED_INVITEINVS.get(0));
-			});
+			System.out.println("offering a inventory to states");
+			STATES.offer(inventory);
+			System.out.println("putting inventory to STORED_INVITEINVS");
+			STORED_INVITEINVS.put(pageNumber.get(), inventory);
+			System.out.println("completing this motherfucker with 0th inventory");
+			callback.complete(STORED_INVITEINVS.get(0));
 		} else {
 			repeatIterationInvite(empties, cloneList, inventory);
-			for (int remove = 1; remove < emptySlots; remove++)
-				cloneList.removeLast();
-			Bukkit.getScheduler().runTask(plugin, () -> {
-				checkingArea.lazySet(checkingArea.get() - emptySlots);
-				STATES.put(inventory, IState.IMPORTANT);
-				STORED_INVITEINVS.put(pageNumber.getAndIncrement(), inventory);
-			});
+			CompletableFuture.runAsync(() -> {
+				for (int remove = 1; remove < emptySlots; remove++)
+					cloneList.removeLast();
+			}, EVIRTUAL);
+			checkingArea.lazySet(checkingArea.get() - emptySlots);
+			STATES.offer(inventory);
+			STORED_INVITEINVS.put(pageNumber.getAndIncrement(), inventory);
 			onPlayerRepeatInvite(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
 		}
 	}
 
 	public static void onPlayerInvite(CompletableFuture<Inventory> callback, boolean update) {
-		if (!STORED_INVITEINVS.isEmpty() && !update)
+		if (!STORED_INVITEINVS.isEmpty() && !update) {
+			System.out.println("completing future");
 			callback.complete(STORED_INVITEINVS.get(0));
-		else {
-			final List<Player> cloneList = List.copyOf(Bukkit.getOnlinePlayers());
+		} else {
+			System.out.println("fucking for first time i guess");
+			final ImmutableList<Player> cloneList = ImmutableList.copyOf(Bukkit.getOnlinePlayers());
 			final int playersSize = cloneList.size();
 			final List<Integer> empties = Collections.unmodifiableList(iInvite.getEmpties());
 			final int emptySlots = empties.size();
 			AtomicInteger checkingArea = new AtomicInteger(playersSize - emptySlots);
 			AtomicInteger pageNumber = new AtomicInteger(0);
+			System.out.println("bs vars created");
 			onPlayerRepeatInvite(pageNumber, cloneList, empties, checkingArea, emptySlots, callback);
 		}
 	}

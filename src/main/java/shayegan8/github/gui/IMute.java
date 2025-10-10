@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 @Getter
 public final class IMute {
@@ -25,7 +26,7 @@ public final class IMute {
 	public IMute() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.mute.emptyLore").stream()
 				.collect(Collectors.toUnmodifiableList());
-		title = ChatPlugin.configuration_menu.getString("gui.mute.title", "&cChatPlugin mute menu");
+		title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.mute.title", "&cChatPlugin mute menu"));
 		empties = ChatPlugin.configuration_menu.getIntegerList("gui.mute.empties.slots").stream()
 				.collect(Collectors.toUnmodifiableList());
 		size = ChatPlugin.configuration_menu.getInt("gui.mute.size", 54);

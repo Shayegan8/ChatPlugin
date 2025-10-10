@@ -4,6 +4,17 @@ import java.util.List;
 
 import org.bukkit.inventory.ItemStack;
 
-public record Entry(String materialName, ItemStack item, String displayName, int amount, List<Integer> slots,
-		List<String> lore) {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
+public class Entry {
+	
+	private final String materialName;
+	private final ItemStack item;
+	private final String displayName;
+	private final int amount;
+	private final List<Integer> slots;
+	private final List<String> lore;
 }

@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 @Getter
 public final class IRequest {
@@ -24,7 +25,7 @@ public final class IRequest {
 	
 	public IRequest() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.request.emptyLore").stream().collect(Collectors.toUnmodifiableList());
-		title = ChatPlugin.configuration_menu.getString("gui.request.title", "&cRequest to groups");
+		title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.request.title", "&cRequest to groups"));
 		empties = ChatPlugin.configuration_menu.getIntegerList("gui.request.empties.slots").stream().collect(Collectors.toUnmodifiableList());
 		size = ChatPlugin.configuration_menu.getInt("gui.request.size", 54);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.request.list").getKeys(false).forEach(each -> {

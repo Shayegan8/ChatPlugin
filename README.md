@@ -26,6 +26,9 @@ mvn clean package
 - ###### PlaceholderAPI plugin
 
 ## Images
+![help](images/chatphelp.png)
+![helpgroup](images/chatpgroup.png)
+![guimenu](images/guimenu.png)
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

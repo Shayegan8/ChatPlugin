@@ -1,6 +1,5 @@
 package shayegan8.github.commands;
 
-import lombok.AllArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -10,17 +9,12 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import shayegan8.github.ChatPlugin;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@AllArgsConstructor
 public class BaseCommand implements CommandExecutor, TabExecutor {
-
-	private CooldownManager cooldownManager;
 
 	@Override
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label,
@@ -33,16 +27,6 @@ public class BaseCommand implements CommandExecutor, TabExecutor {
 		CommandManager cmd_ = ChatPlugin.commands.get(args[0].toLowerCase());
 		if (cmd_ == null)
 			return true;
-
-		CompletableFuture.supplyAsync(() -> ChatPlugin.configuration.getBoolean("cooldown", false))
-				.thenAccept((bool) -> {
-					if (!bool)
-						return;
-					if (cooldownManager.hasCooldown(sender.getName())) {
-						sender.sendMessage(String.valueOf(cooldownManager.getRemained(sender.getName())));
-					}
-					cooldownManager.setCooldown(sender.getName(), Duration.ofSeconds(60));
-				});
 
 		if (!sender.hasPermission(cmd_.getPermission())) {
 			ChatPlugin.sendABMSG(sender, "chatp.permissionMSG", "&cYou dont have a permission!");

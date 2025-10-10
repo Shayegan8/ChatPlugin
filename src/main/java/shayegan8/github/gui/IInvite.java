@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 @Getter
 public final class IInvite {
@@ -25,7 +26,7 @@ public final class IInvite {
 	public IInvite() {
 		lore = ChatPlugin.configuration_menu.getStringList("gui.invite.emptyLore").stream()
 				.collect(Collectors.toUnmodifiableList());
-		title = ChatPlugin.configuration_menu.getString("gui.invite.title", "&cInvite players to your group");
+		title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.invite.title", "&cInvite players to your group"));
 		empties = ChatPlugin.configuration_menu.getIntegerList("gui.invite.empties.slots");
 		size = ChatPlugin.configuration_menu.getInt("gui.invite.size", 54);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.invite.list").getKeys(false).forEach(each -> {

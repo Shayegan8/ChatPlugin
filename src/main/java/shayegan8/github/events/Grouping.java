@@ -80,7 +80,9 @@ public class Grouping implements Listener {
 			}
 		}).thenCompose(inGroup -> {
 			Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> ChatPlugin.updateInvite());
+			System.out.println("above runned, update fucked");
 			if (inGroup == true) { // this can be null
+				System.out.println("this should run if im in group");
 				Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> ChatPlugin.updateMute(player));
 				return MDatabase.getPlayerGroup(uuid);
 			}

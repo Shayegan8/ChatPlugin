@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 
 import lombok.Getter;
 import shayegan8.github.ChatPlugin;
+import shayegan8.github.ColorUtils;
 
 @Getter
 public final class IMenu {
@@ -23,7 +24,7 @@ public final class IMenu {
 	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
 
 	public IMenu() {
-		title = ChatPlugin.configuration_menu.getString("gui.menu.title", "&cChatPlugin menu");
+		title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.menu.title", "&cChatPlugin menu"));
 		size = ChatPlugin.configuration_menu.getInt("gui.menu.size", 54);
 		inv = Bukkit.createInventory(null, size);
 		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {

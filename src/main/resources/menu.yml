@@ -1,8 +1,7 @@
 gui:
    menu:
       size: 54
-      title:
-         text: '&eChatPlugin menu'
+      title: '&eChatPlugin menu'
       list:
          zadw:
             material: BLACK_STAINED_GLASS_PANE
@@ -121,8 +120,7 @@ gui:
             - 32
    mute:
       size: 54
-      title:
-         text: '&eChatPlugin mute players'
+      title: '&eChatPlugin mute players'
       emptyLore:
       - '&r'
       - '&a&lRIGHT CLICK &r&8- &eto mute player'
@@ -202,8 +200,7 @@ gui:
             - 37
    invite:
       size: 54
-      title:
-         text: '&eChatPlugin invite players'
+      title: '&eChatPlugin invite players'
       emptyLore:
       - '&r'
       - '&a&lRIGHT CLICK &r&8- &eto invite player'
@@ -283,8 +280,7 @@ gui:
             - 37
    request:
       size: 54
-      title:
-         text: '&eChatPlugin mute players'
+      title: '&eChatPlugin mute players'
       emptyLore:
       - '&r'
       - '&a&lRIGHT CLICK &r&8- &eto send request to group''s admin'
@@ -364,8 +360,7 @@ gui:
             - 37
    delete:
       size: 9
-      title:
-         text: '&eChatPlugin delete group'
+      title: '&eChatPlugin delete group'
       list:
          shitass:
             material: BLACK_STAINED_GLASS_PANE
