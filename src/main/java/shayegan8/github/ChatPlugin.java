@@ -114,7 +114,7 @@ public final class ChatPlugin extends JavaPlugin {
 	private static final String REFRESH = "\u001b[0m";
 	private static final String URL = "https://github.com/Shayegan8/ChatPlugin/releases/latest/download/ChatPlugin.jar";
 	private static final String POM_URL = "https://raw.githubusercontent.com/Shayegan8/ChatPlugin/refs/heads/guiAwesome/pom.xml";
-	private static final String VERSION = "1.0.1";
+	private static final String VERSION = "1.1.0";
 	public static final ExecutorService EVIRTUAL = Executors.newVirtualThreadPerTaskExecutor();
 	public static IMute iMute;
 	public static IMenu iMenu;
