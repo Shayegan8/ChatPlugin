@@ -13,133 +13,150 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Group extends CommandManager {
 
-	@Override
-	public String getUsage() {
-		return "&e/chatp group help,create,delete";
-	}
+    @Override
+    public String getUsage() {
+        return "&e/chatp group help,create,delete";
+    }
 
-	@Override
-	public String getPermission() {
-		return "chatp.base.group";
-	}
+    @Override
+    public String getPermission() {
+        return "chatp.base.group";
+    }
 
-	private void console(CommandSender sender, String[] args) {
-		if (args.length == 2) {
-			switch (args[0]) {
-			case "create":
-				MDatabase.createGroup(args[1]);
-				ChatPlugin.sendABMSG(sender, "chatp.group.created", "&eGroup created");
-				break;
-			case "delete":
-				MDatabase.deleteGroup(args[1]);
-				ChatPlugin.sendABMSG(sender, "chatp.group.deleted", "&eGroup deleted");
-				break;
-			}
-		} else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-			CompletableFuture
-					.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help"), ChatPlugin.EVIRTUAL)
-					.thenAccept(ls -> ls.forEach(str -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-							() -> sender.sendMessage(ColorUtils.B(str)))))
-					.exceptionally(exp -> {
-						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-					});
-		} else
-			ChatPlugin.sendABMSG(sender, "chatp.group.usage", getUsage());
-	}
+    private void console(CommandSender sender, String[] args) {
+        if (args.length == 2) {
+            switch (args[0]) {
+                case "create":
+                    MDatabase.createGroup(args[1]);
+                    ChatPlugin.sendABMSG(sender, "chatp.group.created", "&eGroup created");
+                    break;
+                case "delete":
+                    MDatabase.deleteGroup(args[1]);
+                    ChatPlugin.sendABMSG(sender, "chatp.group.deleted", "&eGroup deleted");
+                    break;
+            }
+        } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
+            try {
+                ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            } catch (InterruptedException exp) {
+                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+            }
+            CompletableFuture
+                    .supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help"), ChatPlugin.EVIRTUAL)
+                    .thenAccept(ls -> ls.forEach(str -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+                    () -> sender.sendMessage(ColorUtils.B(str))))).whenComplete((a, b) -> ChatPlugin.semaphore.release())
+                    .exceptionally(exp -> {
+                        throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+                    });
 
-	@SuppressWarnings("unchecked")
-	private void player(CommandSender sender, String[] args) {
-		final Player player = (Player) sender;
-		final UUID uuid = player.getUniqueId();
-		if (args.length == 2) {
-			switch (args[0]) {
-			case "create":
-				MDatabase.isPlayerInGroup(uuid).thenAccept((check) -> {
-					if (check) {
-						ChatPlugin.sendCMSG(player, "chatp.group.cantCreate", "&cYou are already in a group");
-						return;
-					}
-					Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-						MDatabase.createGroup(args[1]);
-						MDatabase.setPlayerInGroup(uuid, true);
-						Placeholders.updateGroup(uuid);
-						MDatabase.setPlayerTag(uuid, "admin");
-						Placeholders.updateTag(uuid);
-						MDatabase.setPlayerGroup(uuid, args[1]);
-						ChatPlugin.updateMute(player);
-						ChatPlugin.updateRequest();
-						ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");						
-					});
-				}).exceptionally(exp -> {
-					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-				});
-				break;
-			case "delete":
-				MDatabase.isGroupExist(args[1]).thenAccept(groupExist -> {
-					if (!groupExist) {
-						ChatPlugin.sendCMSG(player, "chatp.group.notExist", "&cThat group dosent exist");
-						return;
-					}
+        } else {
+            ChatPlugin.sendABMSG(sender, "chatp.group.usage", getUsage());
+        }
+    }
 
-					MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
-						if (!check) {
-							ChatPlugin.sendCMSG(player, "chatp.group.notIn", "&cYou are not in any group");
-							return CompletableFuture.completedFuture(null);
-						}
-						return MDatabase.getPlayerTag(uuid);
-					}).thenAccept((tag) -> {
-						if (!tag.equals("admin")) {
-							ChatPlugin.sendCMSG(player, "chatp.group.admin", "&eYou are not admin");
-							return;
-						}
-						MDatabase.getPlayersByGroup(args[1]).thenAccept(ls -> {
-							ls.stream().forEach(eachUUID -> {
-								final Player eachPlayer = Bukkit.getPlayer(eachUUID);
-								if (!eachPlayer.isOnline())
-									return;
-								Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
-									MDatabase.deleteGroup(args[1]);
-									MDatabase.setPlayerGroup(eachUUID, "none");
-									Placeholders.updateGroup(eachUUID);
-									MDatabase.setPlayerInGroup(eachUUID, false);
-									MDatabase.setPlayerTag(eachUUID, "none");
-									Placeholders.updateTag(eachUUID);
-									ChatPlugin.sendCMSG(Bukkit.getPlayer(uuid), "chatp.group.deleted",
-											"&cYour group has been deleted");
-									ChatPlugin.STORED_MUTEINVS.remove(args[1]);
-									ChatPlugin.updateRequest();									
-								});
-							});
-						});
-					}).exceptionally(exp -> {
-						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-					});
-				});
-				break;
-			}
-		} else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-			CompletableFuture
-					.supplyAsync(() -> (List<String>) ChatPlugin.entries.get("chatp.group.help"), ChatPlugin.EVIRTUAL)
-					.thenAccept(ls -> {
-						ls.forEach(str -> {
-							Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-									() -> sender.sendMessage(ColorUtils.C(player, str)));
-						});
-					}).exceptionally(exp -> {
-						throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-					});
-		} else
-			ChatPlugin.sendACMSG(player, "chatp.group.usage", getUsage());
-	}
+    @SuppressWarnings("unchecked")
+    private void player(CommandSender sender, String[] args) {
+        final Player player = (Player) sender;
+        final UUID uuid = player.getUniqueId();
+        if (args.length == 2) {
+            switch (args[0]) {
+                case "create":
+                    MDatabase.isPlayerInGroup(uuid).thenAccept((check) -> {
+                        if (check) {
+                            ChatPlugin.sendCMSG(player, "chatp.group.cantCreate", "&cYou are already in a group");
+                            return;
+                        }
+                        Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                            MDatabase.createGroup(args[1]);
+                            MDatabase.setPlayerInGroup(uuid, true);
+                            Placeholders.updateGroup(uuid);
+                            MDatabase.setPlayerTag(uuid, "admin");
+                            Placeholders.updateTag(uuid);
+                            MDatabase.setPlayerGroup(uuid, args[1]);
+                            ChatPlugin.updateMute(player);
+                            ChatPlugin.updateRequest();
+                            ChatPlugin.sendCMSG(player, "chatp.group.created", "&e%chatp_group% &ahas been created");
+                        });
+                    }).exceptionally(exp -> {
+                        throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+                    });
+                    break;
+                case "delete":
+                    MDatabase.isGroupExist(args[1]).thenAccept(groupExist -> {
+                        if (!groupExist) {
+                            ChatPlugin.sendCMSG(player, "chatp.group.notExist", "&cThat group dosent exist");
+                            return;
+                        }
 
-	@Override
-	public void execute(CommandSender sender, String[] args) {
-		if (!(sender instanceof Player))
-			console(sender, args);
-		else
-			player(sender, args);
-	}
+                        MDatabase.isPlayerInGroup(uuid).thenCompose((check) -> {
+                            if (!check) {
+                                ChatPlugin.sendCMSG(player, "chatp.group.notIn", "&cYou are not in any group");
+                                return CompletableFuture.completedFuture(null);
+                            }
+                            return MDatabase.getPlayerTag(uuid);
+                        }).thenAccept((tag) -> {
+                            if (!tag.equals("admin")) {
+                                ChatPlugin.sendCMSG(player, "chatp.group.admin", "&eYou are not admin");
+                                return;
+                            }
+                            MDatabase.getPlayersByGroup(args[1]).thenAccept(ls -> {
+                                ls.stream().forEach(eachUUID -> {
+                                    final Player eachPlayer = Bukkit.getPlayer(eachUUID);
+                                    if (!eachPlayer.isOnline()) {
+                                        return;
+                                    }
+                                    Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                                        MDatabase.deleteGroup(args[1]);
+                                        MDatabase.setPlayerGroup(eachUUID, "none");
+                                        Placeholders.updateGroup(eachUUID);
+                                        MDatabase.setPlayerInGroup(eachUUID, false);
+                                        MDatabase.setPlayerTag(eachUUID, "none");
+                                        Placeholders.updateTag(eachUUID);
+                                        ChatPlugin.sendCMSG(Bukkit.getPlayer(uuid), "chatp.group.deleted",
+                                                "&cYour group has been deleted");
+                                        ChatPlugin.STORED_MUTEINVS.remove(args[1]);
+                                        ChatPlugin.updateRequest();
+                                    });
+                                });
+                            });
+                        }).exceptionally(exp -> {
+                            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+                        });
+                    });
+                    break;
+            }
+        } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
+            try {
+                ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            } catch (InterruptedException exp) {
+                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+            }
+            CompletableFuture
+                    .supplyAsync(() -> (List<String>) ChatPlugin.entries.get("chatp.group.help"), ChatPlugin.EVIRTUAL)
+                    .thenAccept(ls -> {
+                        ls.forEach(str -> {
+                            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+                                    () -> sender.sendMessage(ColorUtils.C(player, str)));
+                        });
+                    }).whenComplete((a, b) -> ChatPlugin.semaphore.release()).exceptionally(exp -> {
+                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+            });
+
+        } else {
+            ChatPlugin.sendACMSG(player, "chatp.group.usage", getUsage());
+        }
+    }
+
+    @Override
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            console(sender, args);
+        } else {
+            player(sender, args);
+        }
+    }
 }

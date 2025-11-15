@@ -14,7 +14,6 @@ mvn clean install
 mvn clean package
 ```
 
-
 ### Dependencies used
 - **Sqlite & Postgresql JDBC drivers**
 - **PlaceholderAPI**

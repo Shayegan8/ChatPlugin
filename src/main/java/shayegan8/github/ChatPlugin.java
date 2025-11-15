@@ -63,12 +63,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -116,6 +119,7 @@ public final class ChatPlugin extends JavaPlugin {
 	private static final String POM_URL = "https://raw.githubusercontent.com/Shayegan8/ChatPlugin/refs/heads/guiAwesome/pom.xml";
 	private static final String VERSION = "1.1.0";
 	public static final ExecutorService EVIRTUAL = Executors.newVirtualThreadPerTaskExecutor();
+        public static Semaphore semaphore;
 	public static IMute iMute;
 	public static IMenu iMenu;
 	public static IInvite iInvite;
@@ -184,6 +188,8 @@ public final class ChatPlugin extends JavaPlugin {
 		getLogger().info("Registering events...");
 		getServer().getPluginManager().registerEvents(new Grouping(), this);
 		getServer().getPluginManager().registerEvents(new GuiListener(), this);
+                getLogger().info("Limiting virtual thread executor service...");
+                semaphore = new Semaphore(Integer.parseInt((String) entries.getOrDefault("maximumExecutorsThreads", "100")));
 		if (configuration.getBoolean("update", false)) {
 			getLogger().info("updating...");
 			String[] latestVersion = versionFinder(documentBuilder()).split("\\.");

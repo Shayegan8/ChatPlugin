@@ -8,29 +8,37 @@ import shayegan8.github.ColorUtils;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Help extends CommandManager {
 
-	@Override
-	public String getPermission() {
-		return "chatp.base.help";
-	}
+    @Override
+    public String getPermission() {
+        return "chatp.base.help";
+    }
 
-	@Override
-	public void execute(CommandSender sender, String[] args) {
-		CompletableFuture
-				.supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.help.list"), ChatPlugin.EVIRTUAL)
-				.thenAccept(ls -> {
-					ls.forEach(str -> {
-						if (sender instanceof Player player)
-							Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-									() -> sender.sendMessage(ColorUtils.C(player, str)));
-						else
-							Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-									() -> sender.sendMessage(ColorUtils.B(str)));
-					});
-				}).exceptionally(exp -> {
-					throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-				});
-	}
+    @Override
+    public void execute(CommandSender sender, String[] args) {
+        try {
+            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+        } catch (InterruptedException exp) {
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+        }
+        CompletableFuture
+                .supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.help.list"), ChatPlugin.EVIRTUAL)
+                .thenAccept(ls -> {
+                    ls.forEach(str -> {
+                        if (sender instanceof Player player) {
+                            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+                                    () -> sender.sendMessage(ColorUtils.C(player, str)));
+                        } else {
+                            Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
+                                    () -> sender.sendMessage(ColorUtils.B(str)));
+                        }
+                    });
+                }).whenComplete((a, b) -> ChatPlugin.semaphore.release()).exceptionally(exp -> {
+            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
+        });
+
+    }
 }

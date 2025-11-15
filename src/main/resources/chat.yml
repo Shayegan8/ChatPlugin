@@ -1,6 +1,7 @@
 update: true
 cooldown: true
 chatp:
+   maximumExecutorsThreads: 100
    playerchat: '&e%player_name% %chatp_group%&r&8: &7{msg}'
    help:
       list:
