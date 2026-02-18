@@ -71,7 +71,7 @@ public class MDatabase {
 
     public static CompletableFuture<List<String>> getGroupList() {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -94,7 +94,7 @@ public class MDatabase {
 
     public static void createGroup(String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -114,7 +114,7 @@ public class MDatabase {
 
     public static CompletableFuture<Boolean> isGroupExist(String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -138,7 +138,7 @@ public class MDatabase {
 
     public static void deleteGroup(String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
 
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
@@ -158,7 +158,7 @@ public class MDatabase {
 
     public static CompletableFuture<String> getPlayerGroup(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -183,7 +183,7 @@ public class MDatabase {
 
     public static CompletableFuture<List<UUID>> getPlayersByGroup(String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -206,7 +206,7 @@ public class MDatabase {
 
     public static CompletableFuture<Boolean> playerHasGroup(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -228,7 +228,7 @@ public class MDatabase {
 
     public static void setPlayerGroup(UUID playerUUID, String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -249,7 +249,7 @@ public class MDatabase {
 
     public static void setPlayerTag(UUID playerUUID, String playerTag) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
 
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
@@ -271,7 +271,7 @@ public class MDatabase {
 
     public static void setPlayerInGroup(UUID playerUUID, boolean inGroup) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
 
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
@@ -293,7 +293,7 @@ public class MDatabase {
 
     public static void setPlayerMuted(UUID playerUUID, boolean muted) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -314,7 +314,7 @@ public class MDatabase {
 
     public static void setPlayerInvited(UUID playerUUID, boolean invited) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -335,7 +335,7 @@ public class MDatabase {
 
     public static void setPlayerRequest(UUID playerUUID, String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -356,7 +356,7 @@ public class MDatabase {
 
     public static CompletableFuture<String> getPlayerTag(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -381,7 +381,7 @@ public class MDatabase {
 
     public static CompletableFuture<String> getPlayerRequest(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -405,7 +405,7 @@ public class MDatabase {
 
     public static CompletableFuture<UUID> getGroupAdmin(String groupName) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -429,7 +429,7 @@ public class MDatabase {
 
     public static CompletableFuture<Boolean> isPlayerInGroup(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -454,7 +454,7 @@ public class MDatabase {
 
     public static CompletableFuture<Boolean> isPlayerMuted(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
@@ -485,7 +485,7 @@ public class MDatabase {
 
     public static CompletableFuture<Boolean> isPlayerInvited(UUID playerUUID) {
         try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
+            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
         }
