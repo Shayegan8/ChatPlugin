@@ -11,7 +11,6 @@ Install [maven](https://maven.apache.org/install.html) first
 git clone https://github.com/Shayegan8/ChatPlugin.git
 cd ChatPlugin
 mvn clean install
-mvn clean package
 ```
 
 ### Dependencies used

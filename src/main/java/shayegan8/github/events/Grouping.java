@@ -1,6 +1,5 @@
 package shayegan8.github.events;
 
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -10,8 +9,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import com.google.common.collect.ImmutableList;
-
 import shayegan8.github.ChatPlugin;
 import shayegan8.github.ColorUtils;
 import shayegan8.github.database.MDatabase;
@@ -20,7 +17,6 @@ import shayegan8.github.expansions.Placeholders;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@AllArgsConstructor
 public class Grouping implements Listener {
 
 	@EventHandler
@@ -32,7 +28,7 @@ public class Grouping implements Listener {
 			Placeholders.updateTag(uuid);
 		e.setCancelled(true);
 		final String msg = e.getMessage();
-		ImmutableList.copyOf(Bukkit.getOnlinePlayers()).stream().forEach(eachPlayer -> {
+		Bukkit.getOnlinePlayers().stream().forEach(eachPlayer -> {
 			MDatabase.getPlayerGroup(eachPlayer.getUniqueId())
 					.thenCombine(MDatabase.getPlayerGroup(uuid), String::equals).thenCompose((condition) -> {
 						if (condition) {

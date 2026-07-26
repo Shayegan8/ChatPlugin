@@ -71,7 +71,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -96,7 +95,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 @Permission(name = "chatp.base.*", desc = "Chatplugin wildcard permission")
 @Permission(name = "chatp.base", desc = "Chatplugin base permission")
 @Commands({ @Command(name = "chatp", desc = "chatplugin base command", permission = "chatp.base", usage = "/chatp") })
-@ApiVersion(Target.v1_13)
 @SoftDependency("PlaceholderAPI")
 public final class ChatPlugin extends JavaPlugin {
 
