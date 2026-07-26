@@ -2,8 +2,6 @@
 
 Chat plugin is a spigot plugin that lets your players to make their own private groups and chat with themselves
 
-Supported versions 1.13+
-
 ## Installation
 
 Install [maven](https://maven.apache.org/install.html) first

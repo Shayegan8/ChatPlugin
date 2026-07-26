@@ -32,10 +32,11 @@ public class MDatabase {
             final Path path_ = Paths.get(PATH);
             if (Files.notExists(path_)) {
                 Files.createDirectory(path_);
+                Files.createFile(Paths.get(PATH + "/chatdb.db"));
             }
             switch (name) {
                 case "sqlite":
-                    connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb");
+                    connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb.db");
                     break;
                 case "postgresql":
                     connection = DriverManager.getConnection(
