@@ -19,11 +19,6 @@ public class Help extends CommandManager {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
-        } catch (InterruptedException exp) {
-            throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-        }
         CompletableFuture
                 .supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.help.list"), ChatPlugin.EVIRTUAL)
                 .thenAccept(ls -> {
@@ -36,7 +31,7 @@ public class Help extends CommandManager {
                                     () -> sender.sendMessage(ColorUtils.B(str)));
                         }
                     });
-                }).whenComplete((a, b) -> ChatPlugin.semaphore.release()).exceptionally(exp -> {
+                }).exceptionally(exp -> {
             throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
         });
 

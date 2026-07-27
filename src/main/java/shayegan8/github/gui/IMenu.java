@@ -3,6 +3,7 @@ package shayegan8.github.gui;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
@@ -18,29 +19,35 @@ import shayegan8.github.ColorUtils;
 @Getter
 public final class IMenu {
 
-	private final Inventory inv;
-	private final int size;
-	private final String title;
-	private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
+    private final Inventory inv;
+    private final int size;
+    private final String title;
+    private final Map<String, Entry> entries = new ConcurrentHashMap<String, Entry>();
 
-	public IMenu() {
-		title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.menu.title", "&cChatPlugin menu"));
-		size = ChatPlugin.configuration_menu.getInt("gui.menu.size", 54);
-		inv = Bukkit.createInventory(null, size);
-		ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {
-			String newStr = "gui.menu.list." + each;
-			ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
-			String materialName = section.getString("material");
-			int amount = section.getInt("amount", 1);
-			List<Integer> slots = Collections.unmodifiableList(section.getIntegerList("slots"));
-			List<String> lore = Collections.unmodifiableList(section.getStringList("lore"));
-			String displayName = section.getString("displayName");
-			ItemStack item;
-			if (materialName.equals("PLAYER_HEAD"))
-				item = ChatPlugin.getSkull(section.getString("texture"));
-			else
-				item = new ItemStack(Material.valueOf(materialName), amount);
-			entries.put(newStr, new Entry(materialName, item, displayName, amount, slots, lore));
-		});
-	}
+    public IMenu() {
+        title = ColorUtils.B(ChatPlugin.configuration_menu.getString("gui.menu.title", "&cChatPlugin menu"));
+        size = ChatPlugin.configuration_menu.getInt("gui.menu.size", 54);
+        inv = Bukkit.createInventory(null, size);
+        CompletableFuture.runAsync(() -> {
+            ChatPlugin.configuration_menu.getConfigurationSection("gui.menu.list").getKeys(false).forEach(each -> {
+                Bukkit.getScheduler().runTask(ChatPlugin.getInstance(), () -> {
+                    String newStr = "gui.menu.list." + each;
+                    ConfigurationSection section = ChatPlugin.configuration_menu.getConfigurationSection(newStr);
+                    String materialName = section.getString("material");
+                    int amount = section.getInt("amount", 1);
+                    List<Integer> slots = Collections.unmodifiableList(section.getIntegerList("slots"));
+                    List<String> lore = Collections.unmodifiableList(section.getStringList("lore"));
+                    String displayName = section.getString("displayName");
+                    ItemStack item;
+                    if (materialName.equals("PLAYER_HEAD")) {
+                        item = ChatPlugin.getSkull(section.getString("texture"));
+                    } else {
+                        item = new ItemStack(Material.valueOf(materialName), amount);
+                    }
+                    entries.put(newStr, new Entry(materialName, item, displayName, amount, slots, lore));
+                });
+            });
+
+        }, ChatPlugin.EVIRTUAL);
+    }
 }

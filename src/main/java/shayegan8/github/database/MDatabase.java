@@ -30,12 +30,13 @@ public class MDatabase {
         this.name = name;
         try {
             final Path path_ = Paths.get(PATH);
+
             if (Files.notExists(path_)) {
                 Files.createDirectory(path_);
-                Files.createFile(Paths.get(PATH + "/chatdb.db"));
             }
             switch (name) {
                 case "sqlite":
+                    Class.forName("org.sqlite.JDBC");
                     connection = DriverManager.getConnection("jdbc:sqlite:plugins/ChatPlugin/database/chatdb.db");
                     break;
                 case "postgresql":
@@ -58,7 +59,7 @@ public class MDatabase {
             pStatement = connection.prepareStatement("INSERT OR IGNORE INTO groups (groupName) VALUES (?)");
             pStatement.setString(1, "none");
             pStatement.executeUpdate();
-        } catch (SQLException | IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
@@ -71,11 +72,6 @@ public class MDatabase {
     }
 
     public static CompletableFuture<List<String>> getGroupList() {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final List<String> list = new ArrayList<>();
@@ -89,16 +85,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void createGroup(String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pStatement = ChatPlugin.mDB.getConnection().prepareStatement(
@@ -109,16 +100,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static CompletableFuture<Boolean> isGroupExist(String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 boolean check = false;
@@ -133,17 +119,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void deleteGroup(String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pStatement = ChatPlugin.mDB.getConnection()
@@ -153,16 +133,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(e);
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static CompletableFuture<String> getPlayerGroup(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -178,16 +153,12 @@ public class MDatabase {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static CompletableFuture<List<UUID>> getPlayersByGroup(String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
+
         return CompletableFuture.supplyAsync(() -> {
             List<UUID> list = new ArrayList<UUID>();
             try {
@@ -202,15 +173,10 @@ public class MDatabase {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
             return list.stream().collect(Collectors.toUnmodifiableList());
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
     }
 
     public static CompletableFuture<Boolean> playerHasGroup(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -223,16 +189,11 @@ public class MDatabase {
                 e.printStackTrace();
                 return false;
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void setPlayerGroup(UUID playerUUID, String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -244,17 +205,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void setPlayerTag(UUID playerUUID, String playerTag) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -266,17 +221,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void setPlayerInGroup(UUID playerUUID, boolean inGroup) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -288,16 +237,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void setPlayerMuted(UUID playerUUID, boolean muted) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -309,16 +253,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void setPlayerInvited(UUID playerUUID, boolean invited) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -330,16 +269,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static void setPlayerRequest(UUID playerUUID, String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         CompletableFuture.runAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -351,16 +285,11 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static CompletableFuture<String> getPlayerTag(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -376,17 +305,11 @@ public class MDatabase {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
 
     }
 
     public static CompletableFuture<String> getPlayerRequest(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
-
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -401,15 +324,10 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
     }
 
     public static CompletableFuture<UUID> getGroupAdmin(String groupName) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -425,16 +343,10 @@ public class MDatabase {
             } catch (SQLException e) {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
     }
 
     public static CompletableFuture<Boolean> isPlayerInGroup(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
-
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -450,15 +362,10 @@ public class MDatabase {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
     }
 
     public static CompletableFuture<Boolean> isPlayerMuted(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -474,7 +381,7 @@ public class MDatabase {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
     }
 
     private static byte[] convertToBlob(UUID playerUUID) {
@@ -485,12 +392,6 @@ public class MDatabase {
     }
 
     public static CompletableFuture<Boolean> isPlayerInvited(UUID playerUUID) {
-        try {
-            ChatPlugin.semaphore.tryAcquire(0, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
-        }
-
         return CompletableFuture.supplyAsync(() -> {
             try {
                 PreparedStatement pState = ChatPlugin.mDB.getConnection()
@@ -506,6 +407,6 @@ public class MDatabase {
                 throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
 
             }
-        }, ChatPlugin.EVIRTUAL).whenComplete((a, b) -> ChatPlugin.semaphore.release());
+        }, ChatPlugin.EVIRTUAL);
     }
 }

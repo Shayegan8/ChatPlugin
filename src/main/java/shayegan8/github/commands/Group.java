@@ -40,15 +40,11 @@ public class Group extends CommandManager {
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            try {
-                ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
-            } catch (InterruptedException exp) {
-                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-            }
+            
             CompletableFuture
                     .supplyAsync(() -> ChatPlugin.configuration.getStringList("chatp.group.help"), ChatPlugin.EVIRTUAL)
                     .thenAccept(ls -> ls.forEach(str -> Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
-                    () -> sender.sendMessage(ColorUtils.B(str))))).whenComplete((a, b) -> ChatPlugin.semaphore.release())
+                    () -> sender.sendMessage(ColorUtils.B(str)))))
                     .exceptionally(exp -> {
                         throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
                     });
@@ -130,11 +126,6 @@ public class Group extends CommandManager {
                     break;
             }
         } else if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
-            try {
-                ChatPlugin.semaphore.tryAcquire(1, TimeUnit.SECONDS);
-            } catch (InterruptedException exp) {
-                throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
-            }
             CompletableFuture
                     .supplyAsync(() -> (List<String>) ChatPlugin.entries.get("chatp.group.help"), ChatPlugin.EVIRTUAL)
                     .thenAccept(ls -> {
@@ -142,7 +133,7 @@ public class Group extends CommandManager {
                             Bukkit.getScheduler().runTask(ChatPlugin.getInstance(),
                                     () -> sender.sendMessage(ColorUtils.C(player, str)));
                         });
-                    }).whenComplete((a, b) -> ChatPlugin.semaphore.release()).exceptionally(exp -> {
+                    }).exceptionally(exp -> {
                 throw new IllegalStateException(Arrays.toString(exp.getStackTrace()));
             });
 
