@@ -18,7 +18,7 @@ mvn clean install
 - **lombok**
 
 ### Requirements
-- ###### Java 21 or higher (because of virtual threads)
+- ###### Java 21 or higher
 - ###### PlaceholderAPI plugin
 
 ## Images
