@@ -20,7 +20,7 @@ mvn clean install
 ### Requirements
 - ###### Java 21 or higher
 - ###### PlaceholderAPI plugin
-
+ 
 ## Images
 ![help](images/chatphelp.png)
 ![helpgroup](images/chatpgroup.png)
